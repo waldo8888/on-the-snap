@@ -4,6 +4,8 @@ import './globals.css';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import ThemeRegistry from '@/components/ThemeRegistry/ThemeRegistry';
 import Footer from '@/components/Footer';
+import LenisProvider from '@/components/LenisProvider';
+import CustomCursor from '@/components/CustomCursor';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -55,8 +57,11 @@ export default function RootLayout({
       <body className="antialiased">
         <AppRouterCacheProvider>
           <ThemeRegistry>
-            {children}
-            <Footer />
+            <LenisProvider>
+              <CustomCursor />
+              {children}
+              <Footer />
+            </LenisProvider>
           </ThemeRegistry>
         </AppRouterCacheProvider>
       </body>

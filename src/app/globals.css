@@ -24,6 +24,13 @@ html {
   scroll-padding-top: 80px;
 }
 
+/* Hide default cursor on pointer devices — custom cursor handles it */
+@media (pointer: fine) {
+  *, *::before, *::after {
+    cursor: none !important;
+  }
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
