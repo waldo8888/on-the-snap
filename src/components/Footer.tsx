@@ -339,14 +339,21 @@ export default function Footer() {
                             &copy; {new Date().getFullYear()} On The Snap Billiards &amp; Lounge. All rights reserved.
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 4 }}>
-                            {['Privacy Policy', 'Terms of Service'].map((label) => (
+                            {[
+                                { label: 'Menu', href: '/menu' },
+                                { label: 'Privacy Policy', href: '/privacy-policy' },
+                                { label: 'Terms of Service', href: '/terms-of-service' }
+                            ].map(({ label, href }) => (
                                 <Typography
                                     key={label}
+                                    component="a"
+                                    href={href}
                                     variant="body2"
                                     sx={{
                                         color: 'rgba(255,255,255,0.2)',
                                         fontSize: '0.75rem',
                                         cursor: 'pointer',
+                                        textDecoration: 'none',
                                         transition: 'color 0.3s ease',
                                         '&:hover': { color: 'primary.main' },
                                     }}

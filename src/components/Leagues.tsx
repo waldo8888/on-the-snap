@@ -4,6 +4,8 @@ import { Box, Container, Typography, Grid, Chip } from '@mui/material';
 import { motion } from 'framer-motion';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import GradeIcon from '@mui/icons-material/Grade';
+import type { Tournament } from '@/lib/challonge';
+import TournamentList from './TournamentList';
 
 const leagueTypes = [
     '8-Ball',
@@ -11,7 +13,7 @@ const leagueTypes = [
     '10-Ball',
     'Open Doubles',
     'Scotch Doubles',
-    'CPA Leagues',
+    'CSI Leagues',
     'Ontario Pool Players League',
 ];
 
@@ -60,7 +62,11 @@ function RackBall({ color, n, size = 36 }: { color: string; n: number; size?: nu
     );
 }
 
-export default function Leagues() {
+interface LeaguesProps {
+    tournaments: Tournament[];
+}
+
+export default function Leagues({ tournaments = [] }: LeaguesProps) {
     return (
         <Box
             id="leagues"
@@ -140,7 +146,7 @@ export default function Leagues() {
                                 }}
                             >
                                 Join the thriving billiards community at On The Snap. From casual weekly
-                                play to official CPA and OPPL league nights — there&apos;s a seat at the table
+                                play to official CSI and OPPL league nights — there&apos;s a seat at the table
                                 for every skill level.
                             </Typography>
 
@@ -236,8 +242,8 @@ export default function Leagues() {
                                     backgroundSize: '300% 300%',
                                     animation: 'gradientBorder 6s ease infinite',
                                     '@keyframes gradientBorder': {
-                                        '0%':   { backgroundPosition: '0% 50%' },
-                                        '50%':  { backgroundPosition: '100% 50%' },
+                                        '0%': { backgroundPosition: '0% 50%' },
+                                        '50%': { backgroundPosition: '100% 50%' },
                                         '100%': { backgroundPosition: '0% 50%' },
                                     },
                                 }}
@@ -305,7 +311,7 @@ export default function Leagues() {
                                                 textShadow: '0 0 40px rgba(212,175,55,0.2)',
                                             }}
                                         >
-                                            7.50
+                                            16.50
                                         </Typography>
                                         <Box sx={{ ml: 1.5, mt: { xs: 1.5, md: 2 } }}>
                                             <Typography sx={{ color: 'primary.main', fontSize: '1.1rem', fontWeight: 700, lineHeight: 1 }}>/ HR</Typography>
@@ -343,6 +349,8 @@ export default function Leagues() {
                         </motion.div>
                     </Grid>
                 </Grid>
+
+                <TournamentList tournaments={tournaments} />
             </Container>
         </Box>
     );

@@ -51,7 +51,7 @@ const stats = [
         value: 7,
         suffix: '+',
         label: 'League Formats',
-        desc: 'CPA, OPPL & in-house',
+        desc: 'CSI, OPPL & in-house',
         color: '#D4AF37',
     },
     {

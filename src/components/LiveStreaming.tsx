@@ -8,9 +8,9 @@ import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
 import TvIcon from '@mui/icons-material/Tv';
 
 const CAMERA_FEEDS = [
-    { label: 'Table 1 — Feature Match', active: true },
-    { label: 'Table 3 — League Night', active: false },
-    { label: 'Table 7 — Open Play', active: false },
+    { label: 'Table 1 — Feature Match', active: true, image: '/images/venue_tables_1.jpg' },
+    { label: 'Table 3 — League Night', active: false, image: '/images/venue_tables_2.jpg' },
+    { label: 'Table 7 — Open Play', active: false, image: '/images/venue_tables_3.jpg' },
 ];
 
 export default function LiveStreaming() {
@@ -262,7 +262,7 @@ export default function LiveStreaming() {
                                                     width: 60,
                                                     height: 40,
                                                     bgcolor: '#111',
-                                                    backgroundImage: 'url(/images/hero_pool_hall.jpeg)',
+                                                    backgroundImage: `url(${feed.image})`,
                                                     backgroundSize: 'cover',
                                                     backgroundPosition: 'center',
                                                     filter: feed.active ? 'brightness(0.7)' : 'brightness(0.35)',

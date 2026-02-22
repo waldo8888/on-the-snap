@@ -15,10 +15,11 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 
 const navLinks = [
-    { label: 'PLAY', href: '#amenities' },
-    { label: 'LEAGUES', href: '#leagues' },
-    { label: 'LIVE', href: '#live' },
-    { label: 'CONTACT', href: '#contact' },
+    { label: 'MENU', href: '/menu' },
+    { label: 'PLAY', href: '/#amenities' },
+    { label: 'LEAGUES', href: '/#leagues' },
+    { label: 'LIVE', href: '/#live' },
+    { label: 'CONTACT', href: '/#contact' },
 ];
 
 export default function Navbar() {
@@ -77,7 +78,7 @@ export default function Navbar() {
                         <motion.div whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
                             <Box
                                 component="a"
-                                href="#"
+                                href="/"
                                 sx={{
                                     display: 'flex',
                                     alignItems: 'center',

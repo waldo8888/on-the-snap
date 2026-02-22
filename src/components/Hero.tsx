@@ -156,22 +156,23 @@ export default function Hero() {
                     style={{ opacity: textOpacity, scale: logoScale }}
                 >
                     {/* Logo */}
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: { xs: 2, md: 3 } }}>
                         <motion.div
                             whileHover={{ scale: 1.06 }}
                             transition={{ type: 'spring', stiffness: 250 }}
-                            style={{ position: 'relative', width: 200, height: 200 }}
                         >
-                            <Image
-                                src="/images/onthesnap_logo.png"
-                                alt="On The Snap Logo"
-                                fill
-                                style={{
-                                    objectFit: 'contain',
-                                    filter: 'drop-shadow(0 0 30px rgba(212,175,55,0.6)) drop-shadow(0 0 60px rgba(212,175,55,0.25))',
-                                }}
-                                priority
-                            />
+                            <Box sx={{ position: 'relative', width: { xs: 220, sm: 280, md: 340 }, height: { xs: 220, sm: 280, md: 340 } }}>
+                                <Image
+                                    src="/images/onthesnap_logo.png"
+                                    alt="On The Snap Logo"
+                                    fill
+                                    style={{
+                                        objectFit: 'contain',
+                                        filter: 'drop-shadow(0 0 40px rgba(212,175,55,0.6)) drop-shadow(0 0 80px rgba(212,175,55,0.3))',
+                                    }}
+                                    priority
+                                />
+                            </Box>
                         </motion.div>
                     </Box>
 
@@ -196,31 +197,6 @@ export default function Hero() {
                         </Typography>
                     </motion.div>
 
-                    {/* Main heading with shimmer gold */}
-                    <Typography
-                        variant="h1"
-                        sx={{
-                            fontSize: { xs: '3.2rem', sm: '5rem', md: '7rem', lg: '8rem' },
-                            lineHeight: 0.95,
-                            mb: 1.5,
-                            letterSpacing: '-0.03em',
-                            fontFamily: 'var(--font-playfair)',
-                            background: 'linear-gradient(90deg, #9e7f1e 0%, #F0CF70 25%, #ffffff 50%, #F0CF70 75%, #9e7f1e 100%)',
-                            backgroundSize: '200% auto',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text',
-                            animation: 'textShimmer 6s linear infinite',
-                            '@keyframes textShimmer': {
-                                '0%':   { backgroundPosition: '-200% center' },
-                                '100%': { backgroundPosition: '200% center' },
-                            },
-                            filter: 'drop-shadow(0 0 30px rgba(212,175,55,0.15))',
-                        }}
-                    >
-                        ON THE SNAP
-                    </Typography>
-
                     {/* Subtitle with decorative lines */}
                     <Box
                         sx={{
@@ -243,7 +219,7 @@ export default function Hero() {
                                 whiteSpace: 'nowrap',
                             }}
                         >
-                            Billiards &amp; Lounge
+                            Pool &middot; Darts &middot; Tournaments &middot; Lounge
                         </Typography>
                         <Box sx={{ flexGrow: 1, maxWidth: 80, height: '1px', background: 'linear-gradient(90deg, rgba(212,175,55,0.6), transparent)' }} />
                     </Box>

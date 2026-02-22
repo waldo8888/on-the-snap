@@ -2,6 +2,7 @@
 
 import { Box, Container, Typography, Grid } from '@mui/material';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 // SVG pool ball icon with authentic shine & number
 function PoolBall({ number, color, size = 72 }: { number: number; color: string; size?: number }) {
@@ -54,6 +55,7 @@ const amenities = [
         description:
             'Impeccably maintained 9-foot tournament tables with Simonis 860 felt, polished Aramith balls, and precision leveling. Every rack, every time.',
         tag: 'PLAY',
+        image: '/images/venue_tables_1.jpg',
     },
     {
         ballNum: 9,
@@ -62,6 +64,7 @@ const amenities = [
         description:
             '4 pro-grade steel-tip dartboards in a dedicated arena. Perfect for friendly competition, league nights, or stepping up your game.',
         tag: 'COMPETE',
+        image: '/images/venue_darts_1.jpg',
     },
     {
         ballNum: 2,
@@ -70,14 +73,16 @@ const amenities = [
         description:
             'A fully licensed bar pouring curated cocktails, cold craft drafts, and a kitchen menu highlighted by our legendary signature wings.',
         tag: 'UNWIND',
+        image: '/images/venue_bar.jpg',
     },
     {
         ballNum: 10,
         ballColor: '#1A5CC8',
         title: 'Tournaments',
         description:
-            'Home to CPA, OPPL, and weekly in-house 8-ball & 9-ball tournaments. Whether you are hunting glory or your first trophy, there is a format for you.',
+            'Home to CSI, OPPL, and weekly in-house 8-ball & 9-ball tournaments. Whether you are hunting glory or your first trophy, there is a format for you.',
         tag: 'WIN',
+        image: '/images/venue_crowd.jpg',
     },
 ];
 
@@ -178,12 +183,9 @@ export default function Amenities() {
                                 >
                                     <Box
                                         sx={{
-                                            p: { xs: 4, md: 5 },
                                             height: '100%',
                                             display: 'flex',
                                             flexDirection: 'column',
-                                            alignItems: 'center',
-                                            textAlign: 'center',
                                             bgcolor: 'rgba(255,255,255,0.025)',
                                             border: '1px solid rgba(255,255,255,0.06)',
                                             borderRadius: 0,
@@ -221,69 +223,75 @@ export default function Amenities() {
                                             },
                                         }}
                                     >
-                                        {/* Corner bracket bottom-right */}
-                                        <Box sx={{
-                                            position: 'absolute', bottom: -1, right: -1,
-                                            width: 24, height: 24,
-                                            borderBottom: '2px solid rgba(212,175,55,0)',
-                                            borderRight: '2px solid rgba(212,175,55,0)',
-                                            transition: 'border-color 0.4s ease',
-                                            '.card-root:hover &': { borderColor: 'rgba(212,175,55,0.5)' },
-                                        }} />
-
-                                        {/* Tag badge */}
-                                        <Box
-                                            sx={{
-                                                position: 'absolute',
-                                                top: 18,
-                                                right: 18,
-                                                bgcolor: 'rgba(212,175,55,0.1)',
-                                                border: '1px solid rgba(212,175,55,0.25)',
-                                                px: 1.2,
-                                                py: 0.3,
-                                                fontSize: '0.55rem',
-                                                fontWeight: 800,
-                                                letterSpacing: '0.2em',
-                                                color: '#D4AF37',
-                                                fontFamily: 'var(--font-inter)',
-                                            }}
-                                        >
-                                            {item.tag}
-                                        </Box>
-
-                                        {/* Pool ball badge */}
-                                        <Box sx={{ mb: 3.5, mt: 1 }}>
-                                            <motion.div
-                                                whileHover={{ rotate: [0, -8, 8, 0], scale: 1.12 }}
-                                                transition={{ duration: 0.5 }}
+                                        {/* Card image */}
+                                        <Box sx={{ position: 'relative', width: '100%', height: 180, flexShrink: 0 }}>
+                                            <Image
+                                                src={item.image}
+                                                alt={item.title}
+                                                fill
+                                                sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 25vw"
+                                                style={{ objectFit: 'cover', filter: 'brightness(0.5) saturate(1.1)' }}
+                                            />
+                                            <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(8,8,8,0.95) 0%, transparent 70%)' }} />
+                                            {/* Tag badge */}
+                                            <Box
+                                                sx={{
+                                                    position: 'absolute',
+                                                    top: 14,
+                                                    right: 14,
+                                                    bgcolor: 'rgba(0,0,0,0.55)',
+                                                    backdropFilter: 'blur(6px)',
+                                                    border: '1px solid rgba(212,175,55,0.35)',
+                                                    px: 1.2,
+                                                    py: 0.3,
+                                                    fontSize: '0.55rem',
+                                                    fontWeight: 800,
+                                                    letterSpacing: '0.2em',
+                                                    color: '#D4AF37',
+                                                    fontFamily: 'var(--font-inter)',
+                                                    zIndex: 2,
+                                                }}
                                             >
-                                                <PoolBall number={item.ballNum} color={item.ballColor} size={72} />
-                                            </motion.div>
+                                                {item.tag}
+                                            </Box>
                                         </Box>
 
-                                        <Typography
-                                            variant="h5"
-                                            sx={{
-                                                mb: 2,
-                                                color: 'text.primary',
-                                                fontWeight: 700,
-                                                fontFamily: 'var(--font-playfair)',
-                                                fontSize: { xs: '1.1rem', md: '1.2rem' },
-                                            }}
-                                        >
-                                            {item.title}
-                                        </Typography>
-                                        <Typography
-                                            variant="body2"
-                                            sx={{
-                                                color: 'text.secondary',
-                                                lineHeight: 1.8,
-                                                flexGrow: 1,
-                                                fontSize: '0.9rem',
-                                            }}
-                                        >
-                                            {item.description}
-                                        </Typography>
+                                        {/* Content */}
+                                        <Box sx={{ px: { xs: 3, md: 4 }, pb: { xs: 3, md: 4 }, pt: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', flexGrow: 1 }}>
+                                            {/* Pool ball badge */}
+                                            <Box sx={{ mb: 2.5, mt: -4.5 }}>
+                                                <motion.div
+                                                    whileHover={{ rotate: [0, -8, 8, 0], scale: 1.12 }}
+                                                    transition={{ duration: 0.5 }}
+                                                >
+                                                    <PoolBall number={item.ballNum} color={item.ballColor} size={64} />
+                                                </motion.div>
+                                            </Box>
+
+                                            <Typography
+                                                variant="h5"
+                                                sx={{
+                                                    mb: 2,
+                                                    color: 'text.primary',
+                                                    fontWeight: 700,
+                                                    fontFamily: 'var(--font-playfair)',
+                                                    fontSize: { xs: '1.1rem', md: '1.2rem' },
+                                                }}
+                                            >
+                                                {item.title}
+                                            </Typography>
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    color: 'text.secondary',
+                                                    lineHeight: 1.8,
+                                                    flexGrow: 1,
+                                                    fontSize: '0.9rem',
+                                                }}
+                                            >
+                                                {item.description}
+                                            </Typography>
+                                        </Box>
                                     </Box>
                                 </motion.div>
                             </motion.div>

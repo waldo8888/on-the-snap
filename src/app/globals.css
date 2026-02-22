@@ -124,3 +124,22 @@ body {
   0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0.7; }
   100% { transform: translate(-50%, -50%) scale(2.4); opacity: 0; }
 }
+
+/* ─── Gold Gradient Line Sweep ──────────────────────────────── */
+@keyframes goldSweep {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.gold-line-sweep {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(212,175,55,0.3) 25%,
+    rgba(240,207,112,0.6) 50%,
+    rgba(212,175,55,0.3) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: goldSweep 4s ease-in-out infinite;
+}
