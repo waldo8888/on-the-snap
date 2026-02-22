@@ -55,10 +55,10 @@ const stats = [
         color: '#D4AF37',
     },
     {
-        value: 2,
-        suffix: ' AM',
-        label: 'Close Time',
-        desc: 'Open late every night',
+        value: 100,
+        suffix: '+',
+        label: 'Events Per Year',
+        desc: 'Tournaments & league nights',
         color: '#D4AF37',
     },
 ];
@@ -112,6 +112,22 @@ export default function Stats() {
             />
 
             <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
+                {/* Eyebrow label */}
+                <Typography
+                    sx={{
+                        textAlign: 'center',
+                        color: 'rgba(212,175,55,0.5)',
+                        fontSize: '0.6rem',
+                        fontWeight: 700,
+                        letterSpacing: '0.3em',
+                        fontFamily: 'var(--font-inter)',
+                        textTransform: 'uppercase',
+                        pt: 4,
+                        mb: 0,
+                    }}
+                >
+                    Hamilton&apos;s Premier Billiards Destination
+                </Typography>
                 <Grid container sx={{ border: '1px solid rgba(255,255,255,0.04)' }}>
                     {stats.map((stat, index) => (
                         <Grid

@@ -11,6 +11,8 @@ import {
     ListItem,
 } from '@mui/material';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
+import Link from 'next/link';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -76,37 +78,19 @@ export default function Navbar() {
                     >
                         {/* Logo */}
                         <motion.div whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
-                            <Box
-                                component="a"
+                            <Link
                                 href="/"
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 1.5,
-                                    cursor: 'pointer',
-                                    textDecoration: 'none',
-                                }}
+                                style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', textDecoration: 'none' }}
                             >
-                                {/* OTS badge */}
-                                <Box
-                                    sx={{
-                                        width: 38,
-                                        height: 38,
-                                        borderRadius: '50%',
-                                        background: 'linear-gradient(135deg, #D4AF37 0%, #9e7f1e 100%)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '0.65rem',
-                                        fontWeight: 900,
-                                        color: '#050505',
-                                        fontFamily: 'var(--font-inter)',
-                                        letterSpacing: '0.05em',
-                                        boxShadow: '0 0 18px rgba(212,175,55,0.5)',
-                                        flexShrink: 0,
-                                    }}
-                                >
-                                    OTS
+                                {/* Logo image */}
+                                <Box sx={{ position: 'relative', width: 42, height: 42, flexShrink: 0 }}>
+                                    <Image
+                                        src="/images/onthesnap_logo.png"
+                                        alt="On The Snap"
+                                        fill
+                                        style={{ objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(212,175,55,0.55))' }}
+                                        priority
+                                    />
                                 </Box>
                                 <Box>
                                     <Box
@@ -134,7 +118,7 @@ export default function Navbar() {
                                         Billiards &amp; Lounge
                                     </Box>
                                 </Box>
-                            </Box>
+                            </Link>
                         </motion.div>
 
                         {/* Desktop Links */}
@@ -142,7 +126,7 @@ export default function Navbar() {
                             {navLinks.map((link) => (
                                 <Box
                                     key={link.label}
-                                    component="a"
+                                    component={Link}
                                     href={link.href}
                                     sx={{
                                         color: 'rgba(245,245,240,0.65)',
@@ -178,6 +162,7 @@ export default function Navbar() {
                                 <Button
                                     variant="contained"
                                     size="small"
+                                    href="#find-us"
                                     sx={{
                                         background: 'linear-gradient(135deg, #D4AF37 0%, #F0CF70 50%, #D4AF37 100%)',
                                         backgroundSize: '200% 100%',
@@ -285,6 +270,8 @@ export default function Navbar() {
                     <Button
                         variant="contained"
                         fullWidth
+                        href="#find-us"
+                        onClick={() => setMobileOpen(false)}
                         sx={{
                             background: 'linear-gradient(135deg, #D4AF37, #F0CF70)',
                             color: '#050505',

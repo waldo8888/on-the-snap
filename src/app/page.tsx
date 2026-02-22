@@ -2,8 +2,10 @@ import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Stats from '@/components/Stats';
 import Amenities from '@/components/Amenities';
+import Gallery from '@/components/Gallery';
 import Leagues from '@/components/Leagues';
 import LiveStreaming from '@/components/LiveStreaming';
+import FindUs from '@/components/FindUs';
 import { Box } from '@mui/material';
 import { fetchTournaments } from '@/lib/challonge';
 import { mockTournaments } from '@/lib/challongeMockData';
@@ -32,8 +34,10 @@ export default async function Home() {
       <Hero />
       <Stats />
       <Amenities />
+      <Gallery />
       <Leagues tournaments={tournaments} />
       <LiveStreaming />
+      <FindUs />
     </Box>
   );
 }

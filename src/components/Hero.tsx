@@ -224,12 +224,28 @@ export default function Hero() {
                         <Box sx={{ flexGrow: 1, maxWidth: 80, height: '1px', background: 'linear-gradient(90deg, rgba(212,175,55,0.6), transparent)' }} />
                     </Box>
 
+                    {/* Visually-hidden h1 for SEO */}
+                    <Box
+                        component="h1"
+                        sx={{
+                            position: 'absolute',
+                            width: 1,
+                            height: 1,
+                            overflow: 'hidden',
+                            clip: 'rect(0 0 0 0)',
+                            whiteSpace: 'nowrap',
+                        }}
+                    >
+                        On The Snap – Hamilton&apos;s Premier Billiards &amp; Lounge
+                    </Box>
+
                     {/* CTA Buttons */}
                     <Box sx={{ display: 'flex', gap: { xs: 2, md: 3 }, justifyContent: 'center', flexWrap: 'wrap' }}>
                         <motion.div whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.96 }}>
                             <Button
                                 variant="contained"
                                 size="large"
+                                href="#find-us"
                                 sx={{
                                     px: { xs: 4, md: 7 },
                                     py: { xs: 1.6, md: 2.1 },
@@ -271,6 +287,7 @@ export default function Hero() {
                             <Button
                                 variant="outlined"
                                 size="large"
+                                href="#leagues"
                                 sx={{
                                     px: { xs: 4, md: 7 },
                                     py: { xs: 1.6, md: 2.1 },

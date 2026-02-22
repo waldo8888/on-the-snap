@@ -230,9 +230,9 @@ export default function Amenities() {
                                                 alt={item.title}
                                                 fill
                                                 sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 25vw"
-                                                style={{ objectFit: 'cover', filter: 'brightness(0.5) saturate(1.1)' }}
+                                                style={{ objectFit: 'cover', filter: 'brightness(0.72) saturate(1.1)' }}
                                             />
-                                            <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(8,8,8,0.95) 0%, transparent 70%)' }} />
+                                            <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(8,8,8,0.88) 0%, rgba(8,8,8,0.1) 55%, transparent 100%)' }} />
                                             {/* Tag badge */}
                                             <Box
                                                 sx={{

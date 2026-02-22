@@ -4,6 +4,7 @@ import { Box, Container, Typography, Grid, IconButton, Divider } from '@mui/mate
 import { motion } from 'framer-motion';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
+import YouTubeIcon from '@mui/icons-material/YouTube';
 import PhoneIcon from '@mui/icons-material/Phone';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -144,7 +145,8 @@ export default function Footer() {
                             <Box sx={{ display: 'flex', gap: 1 }}>
                                 {[
                                     { icon: <FacebookIcon fontSize="small" />, href: 'https://www.facebook.com/profile.php?id=100082684215769', label: 'Facebook' },
-                                    { icon: <InstagramIcon fontSize="small" />, href: '#', label: 'Instagram' },
+                                    { icon: <InstagramIcon fontSize="small" />, href: 'https://www.instagram.com/onthesnap_inthecreek', label: 'Instagram' },
+                                    { icon: <YouTubeIcon fontSize="small" />, href: 'https://youtube.com/@onthesnap', label: 'YouTube' },
                                 ].map(({ icon, href, label }) => (
                                     <IconButton
                                         key={label}
@@ -284,8 +286,9 @@ export default function Footer() {
                             </Typography>
 
                             {[
-                                { day: 'Sunday – Friday', hours: '11:00 AM – 2:00 AM' },
-                                { day: 'Saturday', hours: '11:00 AM – 2:00 AM' },
+                                { day: 'Tuesday – Friday', hours: '4:00 PM – 2:00 AM' },
+                                { day: 'Saturday – Sunday', hours: '11:00 AM – 2:00 AM' },
+                                { day: 'Monday', hours: 'Call for hours' },
                             ].map(({ day, hours }) => (
                                 <Box
                                     key={day}
@@ -314,7 +317,7 @@ export default function Footer() {
                                     }}
                                 />
                                 <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', lineHeight: 1.5 }}>
-                                    Open late every day. Contact us for Monday daytime hours.
+                                    Open now. Call ahead to confirm holiday hours.
                                 </Typography>
                             </Box>
                         </motion.div>
@@ -341,8 +344,6 @@ export default function Footer() {
                         <Box sx={{ display: 'flex', gap: 4 }}>
                             {[
                                 { label: 'Menu', href: '/menu' },
-                                { label: 'Privacy Policy', href: '/privacy-policy' },
-                                { label: 'Terms of Service', href: '/terms-of-service' }
                             ].map(({ label, href }) => (
                                 <Typography
                                     key={label}
