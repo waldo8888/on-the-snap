@@ -1,10 +1,12 @@
 'use client';
 
-import { Box, Container, Typography, Grid, Chip } from '@mui/material';
+import { Box, Container, Typography, Grid, Chip, Button } from '@mui/material';
 import { motion } from 'framer-motion';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import GradeIcon from '@mui/icons-material/Grade';
-import type { Tournament } from '@/lib/challonge';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import Link from 'next/link';
+import type { TournamentWithDetails } from '@/lib/tournament-engine/types';
 import TournamentList from './TournamentList';
 
 const leagueTypes = [
@@ -63,7 +65,7 @@ function RackBall({ color, n, size = 36 }: { color: string; n: number; size?: nu
 }
 
 interface LeaguesProps {
-    tournaments: Tournament[];
+    tournaments: TournamentWithDetails[];
 }
 
 export default function Leagues({ tournaments = [] }: LeaguesProps) {
@@ -351,6 +353,28 @@ export default function Leagues({ tournaments = [] }: LeaguesProps) {
                 </Grid>
 
                 <TournamentList tournaments={tournaments} />
+
+                <Box sx={{ textAlign: 'center', mt: 4 }}>
+                    <Button
+                        component={Link}
+                        href="/tournaments"
+                        variant="outlined"
+                        endIcon={<ArrowForwardIcon />}
+                        sx={{
+                            borderColor: 'rgba(212,175,55,0.4)',
+                            color: 'primary.main',
+                            px: 4,
+                            py: 1.5,
+                            letterSpacing: '0.1em',
+                            '&:hover': {
+                                borderColor: 'primary.main',
+                                bgcolor: 'rgba(212,175,55,0.08)',
+                            },
+                        }}
+                    >
+                        View All Tournaments
+                    </Button>
+                </Box>
             </Container>
         </Box>
     );
