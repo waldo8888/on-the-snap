@@ -7,8 +7,15 @@ import Leagues from '@/components/Leagues';
 import LiveStreaming from '@/components/LiveStreaming';
 import FindUs from '@/components/FindUs';
 import { Box } from '@mui/material';
-import { getTournamentById, getTournaments } from '@/lib/tournaments';
+import {
+  getLeagues,
+  getPlayerLeaderboard,
+  getTournamentById,
+  getTournaments,
+} from '@/lib/tournaments';
 import type {
+  LeagueWithDetails,
+  PlayerLeaderboardEntry,
   Tournament,
   TournamentWithDetails,
   TournamentStatus,
@@ -68,7 +75,11 @@ async function getFeaturedTournaments(): Promise<TournamentWithDetails[]> {
 }
 
 export default async function Home() {
-  const tournaments = await getFeaturedTournaments();
+  const [tournaments, leagues, leaderboard] = await Promise.all([
+    getFeaturedTournaments(),
+    getLeagues({ published: true }),
+    getPlayerLeaderboard(),
+  ]);
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -77,7 +88,11 @@ export default async function Home() {
       <Stats />
       <Amenities />
       <Gallery />
-      <Leagues tournaments={tournaments} />
+      <Leagues
+        tournaments={tournaments}
+        leagues={leagues as LeagueWithDetails[]}
+        topPlayers={leaderboard.slice(0, 5) as PlayerLeaderboardEntry[]}
+      />
       <LiveStreaming />
       <FindUs />
     </Box>

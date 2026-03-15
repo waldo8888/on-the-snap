@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import {
   Box,
@@ -14,13 +14,25 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
+import DownloadIcon from '@mui/icons-material/Download';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import BracketViewer from '@/components/tournament/BracketViewer';
 import RoundRobinTable from '@/components/tournament/RoundRobinTable';
+import MatchDetailDialog from '@/components/tournament/MatchDetailDialog';
+import BracketLegend from '@/components/tournament/BracketLegend';
+import ZoomableBracketSection from '@/components/tournament/ZoomableBracketSection';
 import type {
   TournamentWithDetails,
   Participant,
   Match,
+  Announcement,
 } from '@/lib/tournament-engine/types';
+import { getAnnouncements, getTournamentById } from '@/lib/tournaments';
+import CampaignIcon from '@mui/icons-material/Campaign';
+import PushPinIcon from '@mui/icons-material/PushPin';
+import { useTournamentRealtime } from '@/lib/tournament-realtime';
+import { downloadBracketSectionsAsPdf, downloadBracketSvgAsPng } from '@/lib/bracket-export';
+import { formatMatchDuration } from '@/lib/match-formatting';
 
 type TabValue = 'overview' | 'bracket' | 'players' | 'results';
 
@@ -37,8 +49,107 @@ function getPlayerName(id: string | null, participants: Participant[]): string {
 // ── Overview Tab ──
 
 function OverviewPanel({ tournament }: Props) {
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const isLive = tournament.status === 'live' || tournament.status === 'check_in';
+
+  const fetchAnnouncements = useCallback(async () => {
+    if (!isLive) {
+      return [] as Announcement[];
+    }
+
+    return getAnnouncements(tournament.id);
+  }, [isLive, tournament.id]);
+
+  useEffect(() => {
+    if (!isLive) {
+      return;
+    }
+
+    let isActive = true;
+
+    const loadAnnouncements = async () => {
+      try {
+        const data = await fetchAnnouncements();
+        if (isActive) {
+          setAnnouncements(data);
+        }
+      } catch {
+        // Ignore transient announcement refresh errors on first load.
+      }
+    };
+
+    void loadAnnouncements();
+
+    return () => {
+      isActive = false;
+    };
+  }, [fetchAnnouncements, isLive]);
+
+  useTournamentRealtime({
+    tournamentId: tournament.id,
+    enabled: isLive,
+    onEvent: async () => {
+      const data = await fetchAnnouncements();
+      setAnnouncements(data);
+    },
+  });
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      {/* Live Announcements */}
+      {isLive && announcements.length > 0 && (
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            bgcolor: '#111111',
+            border: '1px solid rgba(212,175,55,0.2)',
+            borderRadius: 2,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <CampaignIcon sx={{ color: '#D4AF37', fontSize: 20 }} />
+            <Typography
+              variant="h6"
+              sx={{
+                fontFamily: '"Playfair Display", serif',
+                fontWeight: 600,
+                color: '#f5f5f0',
+                fontSize: '1.05rem',
+              }}
+            >
+              Announcements
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {announcements.map((ann) => (
+              <Box
+                key={ann.id}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 1,
+                  p: 1.25,
+                  borderRadius: 1.5,
+                  bgcolor: ann.pinned ? 'rgba(212,175,55,0.06)' : 'transparent',
+                  border: ann.pinned ? '1px solid rgba(212,175,55,0.15)' : 'none',
+                }}
+              >
+                {ann.pinned && <PushPinIcon sx={{ color: '#D4AF37', fontSize: 14, mt: 0.25 }} />}
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ color: '#f5f5f0', fontSize: '0.88rem' }}>
+                    {ann.message}
+                  </Typography>
+                  <Typography sx={{ color: '#707070', fontSize: '0.65rem', mt: 0.25 }}>
+                    {new Date(ann.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                  </Typography>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </Paper>
+      )}
+
       {tournament.description && (
         <Paper
           elevation={0}
@@ -125,9 +236,13 @@ function OverviewPanel({ tournament }: Props) {
 // ── Bracket Tab ──
 
 function BracketPanel({ tournament }: Props) {
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const rounds = tournament.rounds || [];
   const participants = tournament.participants || [];
   const allMatches = rounds.flatMap((round) => round.matches || []);
+  const winnersSvgRef = useRef<SVGSVGElement | null>(null);
+  const losersSvgRef = useRef<SVGSVGElement | null>(null);
+  const finalsSvgRef = useRef<SVGSVGElement | null>(null);
 
   if (rounds.length === 0) {
     return (
@@ -205,9 +320,42 @@ function BracketPanel({ tournament }: Props) {
   const winnersRounds = rounds.filter((round) => round.bracket_side === 'winners');
   const losersRounds = rounds.filter((round) => round.bracket_side === 'losers');
   const finalsRounds = rounds.filter((round) => round.bracket_side === 'finals');
+  const hasBracketSections =
+    winnersRounds.length > 0 || losersRounds.length > 0 || finalsRounds.length > 0;
   const activeMatches = allMatches.filter(
     (match) => match.status === 'ready' || match.status === 'in_progress'
   );
+
+  const handleExportPng = async () => {
+    const svg =
+      winnersSvgRef.current ?? losersSvgRef.current ?? finalsSvgRef.current;
+
+    if (!svg) {
+      return;
+    }
+
+    await downloadBracketSvgAsPng(
+      svg,
+      `${tournament.title.toLowerCase().replace(/\s+/g, '-')}-bracket.png`
+    );
+  };
+
+  const handleExportPdf = async () => {
+    const sections = [
+      { label: 'Winners Bracket', svg: winnersSvgRef.current },
+      { label: 'Losers Bracket', svg: losersSvgRef.current },
+      { label: 'Finals', svg: finalsSvgRef.current },
+    ].filter((section): section is { label: string; svg: SVGSVGElement } => Boolean(section.svg));
+
+    if (sections.length === 0) {
+      return;
+    }
+
+    await downloadBracketSectionsAsPdf(
+      sections,
+      `${tournament.title.toLowerCase().replace(/\s+/g, '-')}-bracket.pdf`
+    );
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -244,27 +392,70 @@ function BracketPanel({ tournament }: Props) {
           </Typography>
         </Box>
 
-        <Button
-          component={Link}
-          href={`/tournaments/${tournament.slug}/bracket`}
-          target="_blank"
-          rel="noreferrer"
-          startIcon={<OpenInFullIcon />}
-          variant="outlined"
-          sx={{
-            borderColor: 'rgba(212,175,55,0.3)',
-            color: '#D4AF37',
-            textTransform: 'none',
-            fontWeight: 600,
-            '&:hover': {
-              borderColor: '#D4AF37',
-              bgcolor: 'rgba(212,175,55,0.06)',
-            },
-          }}
-        >
-          Open display view
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          {hasBracketSections && (
+            <>
+              <Button
+                startIcon={<DownloadIcon />}
+                onClick={() => void handleExportPng()}
+                variant="outlined"
+                sx={{
+                  borderColor: 'rgba(212,175,55,0.3)',
+                  color: '#D4AF37',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  '&:hover': {
+                    borderColor: '#D4AF37',
+                    bgcolor: 'rgba(212,175,55,0.06)',
+                  },
+                }}
+              >
+                Export PNG
+              </Button>
+              <Button
+                startIcon={<PictureAsPdfIcon />}
+                onClick={() => void handleExportPdf()}
+                variant="outlined"
+                sx={{
+                  borderColor: 'rgba(212,175,55,0.3)',
+                  color: '#D4AF37',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  '&:hover': {
+                    borderColor: '#D4AF37',
+                    bgcolor: 'rgba(212,175,55,0.06)',
+                  },
+                }}
+              >
+                Export PDF
+              </Button>
+            </>
+          )}
+
+          <Button
+            component={Link}
+            href={`/tournaments/${tournament.slug}/bracket`}
+            target="_blank"
+            rel="noreferrer"
+            startIcon={<OpenInFullIcon />}
+            variant="outlined"
+            sx={{
+              borderColor: 'rgba(212,175,55,0.3)',
+              color: '#D4AF37',
+              textTransform: 'none',
+              fontWeight: 600,
+              '&:hover': {
+                borderColor: '#D4AF37',
+                bgcolor: 'rgba(212,175,55,0.06)',
+              },
+            }}
+          >
+            Open display view
+          </Button>
+        </Box>
       </Box>
+
+      <BracketLegend />
 
       <Paper
         elevation={0}
@@ -290,7 +481,14 @@ function BracketPanel({ tournament }: Props) {
           </Typography>
         )}
 
-        <BracketViewer rounds={winnersRounds} participants={participants} />
+        <ZoomableBracketSection>
+          <BracketViewer
+            ref={winnersSvgRef}
+            rounds={winnersRounds}
+            participants={participants}
+            onMatchClick={setSelectedMatch}
+          />
+        </ZoomableBracketSection>
       </Paper>
 
       {losersRounds.length > 0 && (
@@ -316,11 +514,15 @@ function BracketPanel({ tournament }: Props) {
             Losers Bracket
           </Typography>
 
-          <BracketViewer
-            rounds={losersRounds}
-            participants={participants}
-            bracketSide="losers"
-          />
+          <ZoomableBracketSection>
+            <BracketViewer
+              ref={losersSvgRef}
+              rounds={losersRounds}
+              participants={participants}
+              bracketSide="losers"
+              onMatchClick={setSelectedMatch}
+            />
+          </ZoomableBracketSection>
         </Paper>
       )}
 
@@ -347,11 +549,15 @@ function BracketPanel({ tournament }: Props) {
             Finals
           </Typography>
 
-          <BracketViewer
-            rounds={finalsRounds}
-            participants={participants}
-            bracketSide="finals"
-          />
+          <ZoomableBracketSection>
+            <BracketViewer
+              ref={finalsSvgRef}
+              rounds={finalsRounds}
+              participants={participants}
+              bracketSide="finals"
+              onMatchClick={setSelectedMatch}
+            />
+          </ZoomableBracketSection>
         </Paper>
       )}
 
@@ -381,6 +587,19 @@ function BracketPanel({ tournament }: Props) {
           </Box>
         </Box>
       )}
+
+      <MatchDetailDialog
+        match={selectedMatch}
+        participants={participants}
+        roundName={
+          selectedMatch
+            ? rounds.find((r) =>
+                (r.matches ?? []).some((m) => m.id === selectedMatch.id)
+              )?.name ?? undefined
+            : undefined
+        }
+        onClose={() => setSelectedMatch(null)}
+      />
     </Box>
   );
 }
@@ -394,6 +613,7 @@ function MatchCard({
 }) {
   const isActive = match.status === 'in_progress';
   const isComplete = match.status === 'completed';
+  const duration = formatMatchDuration(match.started_at, match.completed_at);
 
   return (
     <Paper
@@ -434,33 +654,50 @@ function MatchCard({
         />
       </Box>
 
-      {match.table_number && (
-        <Chip
-          label={`T${match.table_number}`}
-          size="small"
-          sx={{
-            bgcolor: 'rgba(57,168,122,0.1)',
-            color: '#39a87a',
-            fontSize: '0.65rem',
-            fontWeight: 600,
-            height: 22,
-          }}
-        />
-      )}
+      <Box sx={{ display: 'flex', alignItems: 'flex-end', flexDirection: 'column', gap: 0.75 }}>
+        {duration && (
+          <Typography
+            sx={{
+              fontFamily: '"Inter", sans-serif',
+              fontSize: '0.68rem',
+              color: '#8b8b86',
+              fontWeight: 600,
+            }}
+          >
+            {duration}
+          </Typography>
+        )}
 
-      {isActive && (
-        <Chip
-          label="LIVE"
-          size="small"
-          sx={{
-            bgcolor: '#D4AF37',
-            color: '#111',
-            fontWeight: 700,
-            fontSize: '0.6rem',
-            height: 20,
-          }}
-        />
-      )}
+        <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {match.table_number && (
+            <Chip
+              label={`T${match.table_number}`}
+              size="small"
+              sx={{
+                bgcolor: 'rgba(57,168,122,0.1)',
+                color: '#39a87a',
+                fontSize: '0.65rem',
+                fontWeight: 600,
+                height: 22,
+              }}
+            />
+          )}
+
+          {isActive && (
+            <Chip
+              label="LIVE"
+              size="small"
+              sx={{
+                bgcolor: '#D4AF37',
+                color: '#111',
+                fontWeight: 700,
+                fontSize: '0.6rem',
+                height: 20,
+              }}
+            />
+          )}
+        </Box>
+      </Box>
     </Paper>
   );
 }
@@ -555,12 +792,16 @@ function PlayersPanel({ tournament }: Props) {
             {p.seed || i + 1}
           </Typography>
           <Typography
+            component={p.player_id ? Link : 'span'}
+            href={p.player_id ? `/players/${p.player_id}` : undefined}
             sx={{
               fontFamily: '"Inter", sans-serif',
               fontSize: '0.9rem',
               color: '#f5f5f0',
               fontWeight: 500,
               flex: 1,
+              textDecoration: 'none',
+              '&:hover': p.player_id ? { color: '#D4AF37' } : undefined,
             }}
           >
             {p.name}
@@ -806,12 +1047,16 @@ function ResultsPanel({ tournament }: Props) {
                     {medal.title}
                   </Typography>
                   <Typography
+                    component={entry.participant.player_id ? Link : 'span'}
+                    href={entry.participant.player_id ? `/players/${entry.participant.player_id}` : undefined}
                     sx={{
                       fontFamily: '"Playfair Display", serif',
                       fontSize: { xs: '1.15rem', md: '1.3rem' },
                       color: '#f5f5f0',
                       fontWeight: 700,
                       lineHeight: 1.2,
+                      textDecoration: 'none',
+                      '&:hover': entry.participant.player_id ? { color: '#D4AF37' } : undefined,
                     }}
                   >
                     {entry.participant.name}
@@ -885,12 +1130,16 @@ function ResultsPanel({ tournament }: Props) {
                 {formatOrdinal(entry.place)}
               </Typography>
               <Typography
+                component={entry.participant.player_id ? Link : 'span'}
+                href={entry.participant.player_id ? `/players/${entry.participant.player_id}` : undefined}
                 sx={{
                   fontFamily: '"Inter", sans-serif',
                   fontSize: '0.92rem',
                   color: '#f5f5f0',
                   fontWeight: 500,
                   flex: 1,
+                  textDecoration: 'none',
+                  '&:hover': entry.participant.player_id ? { color: '#D4AF37' } : undefined,
                 }}
               >
                 {entry.participant.name}
@@ -919,6 +1168,24 @@ function ResultsPanel({ tournament }: Props) {
 
 export default function TournamentDetailTabs({ tournament }: Props) {
   const [activeTab, setActiveTab] = useState<TabValue>('overview');
+  const [liveTournament, setLiveTournament] = useState<TournamentWithDetails>(tournament);
+
+  useEffect(() => {
+    setLiveTournament(tournament);
+  }, [tournament]);
+
+  const refreshTournament = useCallback(async () => {
+    const freshTournament = await getTournamentById(liveTournament.id);
+    if (freshTournament) {
+      setLiveTournament(freshTournament);
+    }
+  }, [liveTournament.id]);
+
+  useTournamentRealtime({
+    tournamentId: liveTournament.id,
+    enabled: Boolean(liveTournament.id),
+    onEvent: refreshTournament,
+  });
 
   const availableTabs: { label: string; value: TabValue }[] = [
     { label: 'Overview', value: 'overview' },
@@ -926,7 +1193,7 @@ export default function TournamentDetailTabs({ tournament }: Props) {
     { label: 'Players', value: 'players' },
   ];
 
-  if (tournament.status === 'completed') {
+  if (liveTournament.status === 'completed') {
     availableTabs.push({ label: 'Results', value: 'results' });
   }
 
@@ -969,10 +1236,10 @@ export default function TournamentDetailTabs({ tournament }: Props) {
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.25 }}
         >
-          {activeTab === 'overview' && <OverviewPanel tournament={tournament} />}
-          {activeTab === 'bracket' && <BracketPanel tournament={tournament} />}
-          {activeTab === 'players' && <PlayersPanel tournament={tournament} />}
-          {activeTab === 'results' && <ResultsPanel tournament={tournament} />}
+          {activeTab === 'overview' && <OverviewPanel tournament={liveTournament} />}
+          {activeTab === 'bracket' && <BracketPanel tournament={liveTournament} />}
+          {activeTab === 'players' && <PlayersPanel tournament={liveTournament} />}
+          {activeTab === 'results' && <ResultsPanel tournament={liveTournament} />}
         </motion.div>
       </AnimatePresence>
     </Box>

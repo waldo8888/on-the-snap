@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import {
   Box,
   Paper,
@@ -11,31 +11,31 @@ import {
   Tab,
   CircularProgress,
   Alert,
-  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
-  Divider,
 } from '@mui/material';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
-import type {
-  TournamentWithDetails,
-  Participant,
-  Match,
-  Round,
-  BracketSide,
-} from '@/lib/tournament-engine/types';
+import DownloadIcon from '@mui/icons-material/Download';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import type { TournamentWithDetails, Match } from '@/lib/tournament-engine/types';
 import {
   generateAndSaveTournamentBracket,
   getEligibleParticipantsForBracket,
   getTournamentById,
 } from '@/lib/tournaments';
+import MatchDetailDialog from '@/components/tournament/MatchDetailDialog';
+import BracketLegend from '@/components/tournament/BracketLegend';
+import BracketViewer from '@/components/tournament/BracketViewer';
+import RoundRobinTable from '@/components/tournament/RoundRobinTable';
+import ZoomableBracketSection from '@/components/tournament/ZoomableBracketSection';
+import { downloadBracketSectionsAsPdf, downloadBracketSvgAsPng } from '@/lib/bracket-export';
+import { resolveTournamentAdminRouteId } from '@/lib/route-params';
 
 // ============================================================
 // Tab Navigation (shared pattern)
@@ -59,29 +59,15 @@ const sideLabel: Record<string, string> = {
   round_robin: 'Round Robin',
 };
 
-const statusColor = (status: string) => {
-  switch (status) {
-    case 'completed': return '#66bb6a';
-    case 'in_progress': return '#42a5f5';
-    case 'ready': return '#D4AF37';
-    case 'bye': return '#9e9e9e';
-    default: return '#757575';
-  }
-};
-
-function participantName(id: string | null, participantsMap: Map<string, Participant>): string {
-  if (!id) return 'TBD';
-  return participantsMap.get(id)?.name ?? 'Unknown';
-}
-
 // ============================================================
 // Bracket Page
 // ============================================================
 
 export default function BracketPage() {
   const params = useParams();
+  const pathname = usePathname();
   const router = useRouter();
-  const tournamentId = params.id as string;
+  const tournamentId = resolveTournamentAdminRouteId(params.id, pathname);
 
   const [tournament, setTournament] = useState<TournamentWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,8 +75,18 @@ export default function BracketPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [regenDialogOpen, setRegenDialogOpen] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const winnersSvgRef = useRef<SVGSVGElement | null>(null);
+  const losersSvgRef = useRef<SVGSVGElement | null>(null);
+  const finalsSvgRef = useRef<SVGSVGElement | null>(null);
 
   const fetchData = useCallback(async () => {
+    if (!tournamentId) {
+      setError('Invalid tournament route');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -146,6 +142,52 @@ export default function BracketPage() {
     }
   };
 
+  const handleExportPng = async () => {
+    const svg =
+      winnersSvgRef.current ?? losersSvgRef.current ?? finalsSvgRef.current;
+
+    if (!svg || !tournament) {
+      setError('Bracket export is only available after the native bracket preview renders.');
+      return;
+    }
+
+    try {
+      await downloadBracketSvgAsPng(
+        svg,
+        `${tournament.title.toLowerCase().replace(/\s+/g, '-')}-bracket.png`
+      );
+    } catch (exportError: unknown) {
+      setError(exportError instanceof Error ? exportError.message : 'Failed to export bracket PNG');
+    }
+  };
+
+  const handleExportPdf = async () => {
+    if (!tournament) {
+      setError('Bracket export is only available after the native bracket preview renders.');
+      return;
+    }
+
+    const sections = [
+      { label: 'Winners Bracket', svg: winnersSvgRef.current },
+      { label: 'Losers Bracket', svg: losersSvgRef.current },
+      { label: 'Finals', svg: finalsSvgRef.current },
+    ].filter((section): section is { label: string; svg: SVGSVGElement } => Boolean(section.svg));
+
+    if (sections.length === 0) {
+      setError('Bracket export is only available after the native bracket preview renders.');
+      return;
+    }
+
+    try {
+      await downloadBracketSectionsAsPdf(
+        sections,
+        `${tournament.title.toLowerCase().replace(/\s+/g, '-')}-bracket.pdf`
+      );
+    } catch (exportError: unknown) {
+      setError(exportError instanceof Error ? exportError.message : 'Failed to export bracket PDF');
+    }
+  };
+
   // ----------------------------------------------------------
   // Render helpers
   // ----------------------------------------------------------
@@ -154,22 +196,13 @@ export default function BracketPage() {
   const participantCount = tournament?.participants?.length ?? 0;
   const eligibleParticipantCount = tournament ? getEligibleParticipantsForBracket(tournament).length : 0;
   const canGenerate = eligibleParticipantCount >= 2 && !bracketGenerated;
-
-  const participantsMap = new Map<string, Participant>();
-  tournament?.participants?.forEach((p) => participantsMap.set(p.id, p));
-
-  // Group rounds by bracket side
-  const roundsBySide = new Map<string, (Round & { matches?: Match[] })[]>();
-  if (tournament?.rounds) {
-    for (const round of tournament.rounds) {
-      const existing = roundsBySide.get(round.bracket_side) ?? [];
-      existing.push(round);
-      roundsBySide.set(round.bracket_side, existing);
-    }
-  }
-
-  // Side ordering
-  const sideOrder: BracketSide[] = ['winners', 'losers', 'finals', 'round_robin'];
+  const rounds = tournament?.rounds ?? [];
+  const winnersRounds = rounds.filter((round) => round.bracket_side === 'winners');
+  const losersRounds = rounds.filter((round) => round.bracket_side === 'losers');
+  const finalsRounds = rounds.filter((round) => round.bracket_side === 'finals');
+  const allMatches = rounds.flatMap((round) => round.matches ?? []);
+  const hasBracketSections =
+    winnersRounds.length > 0 || losersRounds.length > 0 || finalsRounds.length > 0;
 
   // ----------------------------------------------------------
   // Loading state
@@ -312,6 +345,39 @@ export default function BracketPage() {
             </Button>
           )}
 
+          {bracketGenerated && hasBracketSections && (
+            <>
+              <Button
+                variant="outlined"
+                startIcon={<DownloadIcon />}
+                onClick={handleExportPng}
+                sx={{
+                  borderColor: 'rgba(212,175,55,0.24)',
+                  color: '#D4AF37',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  '&:hover': { borderColor: '#D4AF37', bgcolor: 'rgba(212,175,55,0.05)' },
+                }}
+              >
+                Export PNG
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<PictureAsPdfIcon />}
+                onClick={handleExportPdf}
+                sx={{
+                  borderColor: 'rgba(212,175,55,0.24)',
+                  color: '#D4AF37',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  '&:hover': { borderColor: '#D4AF37', bgcolor: 'rgba(212,175,55,0.05)' },
+                }}
+              >
+                Export PDF
+              </Button>
+            </>
+          )}
+
           {canGenerate && (
             <Button
               variant="contained"
@@ -351,147 +417,86 @@ export default function BracketPage() {
       </Paper>
 
       {/* Bracket Preview */}
-      {bracketGenerated && tournament.rounds && tournament.rounds.length > 0 && (
-        <Box>
-          {sideOrder.map((side) => {
-            const sideRounds = roundsBySide.get(side);
-            if (!sideRounds || sideRounds.length === 0) return null;
+      {bracketGenerated && rounds.length > 0 && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {tournament.format === 'round_robin' ? (
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2.5,
+                bgcolor: '#0a0a0a',
+                border: '1px solid rgba(212,175,55,0.1)',
+                borderRadius: 2,
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{
+                  fontFamily: 'var(--font-playfair), serif',
+                  fontWeight: 700,
+                  color: '#D4AF37',
+                  fontSize: '1rem',
+                  mb: 2,
+                }}
+              >
+                {sideLabel.round_robin}
+              </Typography>
+              <RoundRobinTable
+                matches={allMatches}
+                participants={tournament.participants ?? []}
+              />
+            </Paper>
+          ) : (
+            <>
+              <BracketLegend />
 
-            return (
-              <Box key={side} sx={{ mb: 4 }}>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontFamily: 'var(--font-playfair), serif',
-                    fontWeight: 700,
-                    color: '#D4AF37',
-                    fontSize: '1rem',
-                    mb: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                  }}
-                >
-                  <AccountTreeIcon sx={{ fontSize: 20 }} />
-                  {sideLabel[side] ?? side}
-                </Typography>
-
-                {sideRounds.map((round) => (
-                  <Box key={round.id} sx={{ mb: 2.5 }}>
+              {[
+                { key: 'winners', label: sideLabel.winners, rounds: winnersRounds, ref: winnersSvgRef, tone: '#D4AF37' },
+                { key: 'losers', label: sideLabel.losers, rounds: losersRounds, ref: losersSvgRef, tone: '#a0a0a0' },
+                { key: 'finals', label: sideLabel.finals, rounds: finalsRounds, ref: finalsSvgRef, tone: '#D4AF37' },
+              ]
+                .filter((section) => section.rounds.length > 0)
+                .map((section) => (
+                  <Paper
+                    key={section.key}
+                    elevation={0}
+                    sx={{
+                      p: 2.5,
+                      bgcolor: '#0a0a0a',
+                      border: '1px solid rgba(212,175,55,0.1)',
+                      borderRadius: 2,
+                    }}
+                  >
                     <Typography
-                      variant="subtitle2"
+                      variant="h6"
                       sx={{
-                        color: '#f5f5f0',
-                        fontWeight: 600,
-                        fontSize: '0.85rem',
-                        mb: 1,
-                        pl: 0.5,
+                        fontFamily: 'var(--font-playfair), serif',
+                        fontWeight: 700,
+                        color: section.tone,
+                        fontSize: '1rem',
+                        mb: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
                       }}
                     >
-                      {round.name ?? `Round ${round.round_number}`}
+                      <AccountTreeIcon sx={{ fontSize: 20 }} />
+                      {section.label}
                     </Typography>
 
-                    <Box
-                      sx={{
-                        display: 'grid',
-                        gridTemplateColumns: {
-                          xs: '1fr',
-                          sm: 'repeat(auto-fill, minmax(280px, 1fr))',
-                        },
-                        gap: 1.5,
-                      }}
-                    >
-                      {(round.matches ?? []).map((match) => (
-                        <Paper
-                          key={match.id}
-                          elevation={0}
-                          sx={{
-                            p: 1.5,
-                            bgcolor: '#0a0a0a',
-                            border: '1px solid rgba(212,175,55,0.08)',
-                            borderRadius: 1.5,
-                            '&:hover': { borderColor: 'rgba(212,175,55,0.2)' },
-                            transition: 'border-color 0.15s',
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem', fontWeight: 600 }}>
-                              Match #{match.match_number}
-                            </Typography>
-                            <Chip
-                              label={match.status}
-                              size="small"
-                              sx={{
-                                height: 20,
-                                fontSize: '0.65rem',
-                                fontWeight: 600,
-                                bgcolor: `${statusColor(match.status)}18`,
-                                color: statusColor(match.status),
-                                textTransform: 'capitalize',
-                              }}
-                            />
-                          </Box>
-
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Box sx={{ flex: 1 }}>
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  fontWeight: match.winner_id === match.player1_id && match.winner_id ? 700 : 400,
-                                  color: match.winner_id === match.player1_id && match.winner_id ? '#D4AF37' : '#f5f5f0',
-                                  fontSize: '0.8rem',
-                                }}
-                              >
-                                {participantName(match.player1_id, participantsMap)}
-                              </Typography>
-                            </Box>
-
-                            {match.status === 'completed' && (
-                              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.8rem', mx: 0.5 }}>
-                                {match.player1_score ?? 0}
-                              </Typography>
-                            )}
-                          </Box>
-
-                          <Divider sx={{ my: 0.5, borderColor: 'rgba(255,255,255,0.05)' }} />
-
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Box sx={{ flex: 1 }}>
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  fontWeight: match.winner_id === match.player2_id && match.winner_id ? 700 : 400,
-                                  color: match.winner_id === match.player2_id && match.winner_id ? '#D4AF37' : '#f5f5f0',
-                                  fontSize: '0.8rem',
-                                }}
-                              >
-                                {participantName(match.player2_id, participantsMap)}
-                              </Typography>
-                            </Box>
-
-                            {match.status === 'completed' && (
-                              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.8rem', mx: 0.5 }}>
-                                {match.player2_score ?? 0}
-                              </Typography>
-                            )}
-                          </Box>
-
-                          {match.status === 'completed' && match.winner_id && (
-                            <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <CheckCircleIcon sx={{ fontSize: 14, color: '#66bb6a' }} />
-                              <Typography variant="caption" sx={{ color: '#66bb6a', fontSize: '0.65rem', fontWeight: 600 }}>
-                                {participantName(match.winner_id, participantsMap)} wins
-                              </Typography>
-                            </Box>
-                          )}
-                        </Paper>
-                      ))}
-                    </Box>
-                  </Box>
+                    <ZoomableBracketSection>
+                      <BracketViewer
+                        ref={section.ref}
+                        rounds={section.rounds}
+                        participants={tournament.participants ?? []}
+                        bracketSide={section.key as 'winners' | 'losers' | 'finals'}
+                        onMatchClick={setSelectedMatch}
+                      />
+                    </ZoomableBracketSection>
+                  </Paper>
                 ))}
-              </Box>
-            );
-          })}
+            </>
+          )}
         </Box>
       )}
 
@@ -518,6 +523,20 @@ export default function BracketPage() {
           </Typography>
         </Paper>
       )}
+
+      {/* Match Detail Dialog */}
+      <MatchDetailDialog
+        match={selectedMatch}
+        participants={tournament?.participants ?? []}
+        roundName={
+          selectedMatch
+            ? tournament?.rounds?.find((r) =>
+                (r.matches ?? []).some((m) => m.id === selectedMatch.id)
+              )?.name ?? undefined
+            : undefined
+        }
+        onClose={() => setSelectedMatch(null)}
+      />
 
       {/* Regenerate Confirmation Dialog */}
       <Dialog

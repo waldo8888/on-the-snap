@@ -105,6 +105,7 @@ export default function NewTournamentPage() {
       const tournament = await createTournament({
         slug,
         title: form.title.trim(),
+        season_id: null,
         description: form.description.trim() || null,
         format: form.format,
         game_type: form.game_type,

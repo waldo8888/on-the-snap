@@ -10,6 +10,8 @@ import {
   Tabs,
   Tab,
   Grid,
+  TextField,
+  MenuItem,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -341,12 +343,38 @@ function TournamentCard({ tournament, index }: { tournament: Tournament; index: 
 
 export default function TournamentListing({ tournaments }: { tournaments: Tournament[] }) {
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [gameTypeFilter, setGameTypeFilter] = useState<'all' | Tournament['game_type']>('all');
+  const [formatFilter, setFormatFilter] = useState<'all' | Tournament['format']>('all');
+
+  const gameTypes = useMemo(
+    () => Array.from(new Set(tournaments.map((tournament) => tournament.game_type))),
+    [tournaments]
+  );
+  const formats = useMemo(
+    () => Array.from(new Set(tournaments.map((tournament) => tournament.format))),
+    [tournaments]
+  );
 
   const filtered = useMemo(() => {
     const statuses = getStatusesForFilter(activeTab);
-    if (!statuses) return tournaments;
-    return tournaments.filter((t) => statuses.includes(t.status));
-  }, [tournaments, activeTab]);
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    return tournaments.filter((tournament) => {
+      const matchesStatus = !statuses || statuses.includes(tournament.status);
+      const matchesSearch =
+        normalizedQuery.length === 0 || tournament.title.toLowerCase().includes(normalizedQuery);
+      const matchesGameType =
+        gameTypeFilter === 'all' || tournament.game_type === gameTypeFilter;
+      const matchesFormat =
+        formatFilter === 'all' || tournament.format === formatFilter;
+
+      return matchesStatus && matchesSearch && matchesGameType && matchesFormat;
+    });
+  }, [tournaments, activeTab, searchQuery, gameTypeFilter, formatFilter]);
+
+  const filtersActive =
+    searchQuery.trim().length > 0 || gameTypeFilter !== 'all' || formatFilter !== 'all';
 
   return (
     <>
@@ -386,6 +414,82 @@ export default function TournamentListing({ tournaments }: { tournaments: Tourna
         </Tabs>
       </Box>
 
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1.5fr) repeat(2, minmax(0, 1fr))' },
+          gap: 1.5,
+          mb: 4,
+        }}
+      >
+        <TextField
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Search tournaments by name"
+          fullWidth
+          size="small"
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              color: '#f5f5f0',
+              bgcolor: '#111111',
+              '& fieldset': { borderColor: 'rgba(212,175,55,0.15)' },
+              '&:hover fieldset': { borderColor: 'rgba(212,175,55,0.35)' },
+              '&.Mui-focused fieldset': { borderColor: '#D4AF37' },
+            },
+          }}
+        />
+        <TextField
+          select
+          label="Game"
+          value={gameTypeFilter}
+          onChange={(event) => setGameTypeFilter(event.target.value as 'all' | Tournament['game_type'])}
+          size="small"
+          fullWidth
+          sx={{
+            '& .MuiInputLabel-root': { color: '#a0a0a0' },
+            '& .MuiOutlinedInput-root': {
+              color: '#f5f5f0',
+              bgcolor: '#111111',
+              '& fieldset': { borderColor: 'rgba(212,175,55,0.15)' },
+              '&:hover fieldset': { borderColor: 'rgba(212,175,55,0.35)' },
+              '&.Mui-focused fieldset': { borderColor: '#D4AF37' },
+            },
+          }}
+        >
+          <MenuItem value="all">All Games</MenuItem>
+          {gameTypes.map((gameType) => (
+            <MenuItem key={gameType} value={gameType}>
+              {formatGameType(gameType)}
+            </MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          select
+          label="Format"
+          value={formatFilter}
+          onChange={(event) => setFormatFilter(event.target.value as 'all' | Tournament['format'])}
+          size="small"
+          fullWidth
+          sx={{
+            '& .MuiInputLabel-root': { color: '#a0a0a0' },
+            '& .MuiOutlinedInput-root': {
+              color: '#f5f5f0',
+              bgcolor: '#111111',
+              '& fieldset': { borderColor: 'rgba(212,175,55,0.15)' },
+              '&:hover fieldset': { borderColor: 'rgba(212,175,55,0.35)' },
+              '&.Mui-focused fieldset': { borderColor: '#D4AF37' },
+            },
+          }}
+        >
+          <MenuItem value="all">All Formats</MenuItem>
+          {formats.map((format) => (
+            <MenuItem key={format} value={format}>
+              {formatTournamentFormat(format)}
+            </MenuItem>
+          ))}
+        </TextField>
+      </Box>
+
       {/* Tournament Grid */}
       {filtered.length === 0 ? (
         <motion.div
@@ -423,8 +527,10 @@ export default function TournamentListing({ tournaments }: { tournaments: Tourna
                 ? 'No tournaments are currently live. Check back soon!'
                 : activeTab === 'upcoming'
                   ? 'No upcoming tournaments scheduled yet.'
-                  : activeTab === 'completed'
+                : activeTab === 'completed'
                     ? 'No completed tournaments to show.'
+                    : filtersActive
+                      ? 'Try clearing the search or adjusting the filters.'
                     : 'No tournaments available at this time.'}
             </Typography>
           </Box>

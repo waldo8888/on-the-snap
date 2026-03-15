@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState, useEffect } from 'react';
+import { forwardRef, useMemo, useRef, useState, useEffect } from 'react';
 import { Box, Typography, useTheme, useMediaQuery } from '@mui/material';
 import type { Match, Round, Participant, BracketSide } from '@/lib/tournament-engine/types';
 
@@ -61,13 +61,13 @@ interface BracketViewerProps {
 // Component
 // ============================================================
 
-export default function BracketViewer({
+const BracketViewer = forwardRef<SVGSVGElement, BracketViewerProps>(function BracketViewer({
   rounds,
   participants,
   bracketSide,
   displayMode = false,
   onMatchClick,
-}: BracketViewerProps) {
+}: BracketViewerProps, ref) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const containerRef = useRef<HTMLDivElement>(null);
@@ -221,6 +221,7 @@ export default function BracketViewer({
       }}
     >
       <svg
+        ref={ref}
         width={totalWidth * scaleFactor}
         height={totalHeight * scaleFactor}
         viewBox={`0 0 ${totalWidth} ${totalHeight}`}
@@ -421,4 +422,8 @@ export default function BracketViewer({
       </svg>
     </Box>
   );
-}
+});
+
+BracketViewer.displayName = 'BracketViewer';
+
+export default BracketViewer;

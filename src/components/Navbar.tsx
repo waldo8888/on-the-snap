@@ -19,8 +19,9 @@ import CloseIcon from '@mui/icons-material/Close';
 const navLinks = [
     { label: 'MENU', href: '/menu' },
     { label: 'TOURNAMENTS', href: '/tournaments' },
+    { label: 'RANKINGS', href: '/leaderboard' },
     { label: 'PLAY', href: '/#amenities' },
-    { label: 'LEAGUES', href: '/#leagues' },
+    { label: 'LEAGUES', href: '/leagues' },
     { label: 'LIVE', href: '/#live' },
     { label: 'CONTACT', href: '/#contact' },
 ];
