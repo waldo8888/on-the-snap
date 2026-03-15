@@ -19,6 +19,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
   CircularProgress,
   Alert,
@@ -30,12 +31,15 @@ import SaveIcon from '@mui/icons-material/Save';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {
   deleteTournament,
+  getEligibleParticipantsForBracket,
+  getTournamentRegistrationAvailability,
   generateAndSaveTournamentBracket,
   generateSlug,
   getTournamentById,
   updateTournament,
 } from '@/lib/tournaments';
-import type { Tournament, TournamentFormat, GameType, TournamentStatus } from '@/lib/tournament-engine/types';
+import type { Tournament, TournamentWithDetails, TournamentFormat, GameType, TournamentStatus } from '@/lib/tournament-engine/types';
+import DateTimePickerField from '@/components/admin/DateTimePickerField';
 
 const FORMATS: { value: TournamentFormat; label: string }[] = [
   { value: 'single_elimination', label: 'Single Elimination' },
@@ -70,26 +74,51 @@ const statusChipColor = (status: TournamentStatus): string => {
   }
 };
 
-const STATUS_TRANSITIONS: Record<TournamentStatus, { next: TournamentStatus; label: string }[]> = {
-  draft: [
-    { next: 'open', label: 'Open Registration' },
-    { next: 'cancelled', label: 'Cancel' },
-  ],
-  open: [
-    { next: 'live', label: 'Start Tournament' },
-    { next: 'cancelled', label: 'Cancel' },
-  ],
-  check_in: [
-    { next: 'live', label: 'Start Tournament' },
-    { next: 'cancelled', label: 'Cancel' },
-  ],
-  live: [
-    { next: 'completed', label: 'Mark Completed' },
-    { next: 'cancelled', label: 'Cancel' },
-  ],
-  completed: [],
-  cancelled: [],
+type StatusActionTone = 'primary' | 'secondary' | 'danger';
+
+type StatusAction = {
+  next: TournamentStatus;
+  label: string;
+  tone: StatusActionTone;
 };
+
+function getStatusTransitions(
+  tournament: Pick<Tournament, 'status' | 'check_in_required'>
+): StatusAction[] {
+  switch (tournament.status) {
+    case 'draft':
+      return [
+        { next: 'open', label: 'Open Registration', tone: 'primary' },
+        { next: 'cancelled', label: 'Cancel', tone: 'danger' },
+      ];
+    case 'open':
+      return [
+        ...(tournament.check_in_required
+          ? [{ next: 'check_in' as const, label: 'Open Check-In', tone: 'secondary' as const }]
+          : []),
+        {
+          next: 'live',
+          label: tournament.check_in_required ? 'Start Tournament Anyway' : 'Start Tournament',
+          tone: 'primary',
+        },
+        { next: 'cancelled', label: 'Cancel', tone: 'danger' },
+      ];
+    case 'check_in':
+      return [
+        { next: 'live', label: 'Start Tournament', tone: 'primary' },
+        { next: 'cancelled', label: 'Cancel', tone: 'danger' },
+      ];
+    case 'live':
+      return [
+        { next: 'completed', label: 'Mark Completed', tone: 'primary' },
+        { next: 'cancelled', label: 'Cancel', tone: 'danger' },
+      ];
+    case 'completed':
+    case 'cancelled':
+    default:
+      return [];
+  }
+}
 
 const goldInputSx = {
   '& .MuiOutlinedInput-root': {
@@ -117,7 +146,7 @@ export default function TournamentEditPage() {
   const params = useParams();
   const id = params.id as string;
 
-  const [tournament, setTournament] = useState<Tournament | null>(null);
+  const [tournament, setTournament] = useState<TournamentWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -125,6 +154,7 @@ export default function TournamentEditPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
 
   const [form, setForm] = useState({
     title: '',
@@ -145,6 +175,18 @@ export default function TournamentEditPage() {
   });
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const refreshTournament = useCallback(async (fallback?: Tournament) => {
+    const fresh = await getTournamentById(id);
+    if (fresh) {
+      setTournament(fresh);
+      return;
+    }
+
+    if (fallback) {
+      setTournament((previous) => (previous ? { ...previous, ...fallback } : (fallback as TournamentWithDetails)));
+    }
+  }, [id]);
 
   const loadTournament = useCallback(async () => {
     try {
@@ -234,7 +276,7 @@ export default function TournamentEditPage() {
         published: form.published,
       });
 
-      setTournament(updated);
+      await refreshTournament(updated);
       setSuccess('Tournament updated successfully');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: unknown) {
@@ -256,7 +298,7 @@ export default function TournamentEditPage() {
       }
 
       const updated = await updateTournament(tournament.id, { status: newStatus });
-      setTournament(updated);
+      await refreshTournament(updated);
       setSuccess(
         newStatus === 'live' && !tournament.bracket_generated_at
           ? 'Bracket generated and tournament is now live'
@@ -268,6 +310,15 @@ export default function TournamentEditPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleStatusAction = (nextStatus: TournamentStatus) => {
+    if (nextStatus === 'live') {
+      setStatusDialogOpen(true);
+      return;
+    }
+
+    void handleStatusChange(nextStatus);
   };
 
   const handleDelete = async () => {
@@ -295,7 +346,95 @@ export default function TournamentEditPage() {
   };
 
   const canDelete = tournament && (tournament.status === 'draft' || tournament.status === 'cancelled');
-  const transitions = tournament ? STATUS_TRANSITIONS[tournament.status] || [] : [];
+  const transitions = tournament ? getStatusTransitions(tournament) : [];
+
+  const participants = tournament?.participants ?? [];
+  const participantCount = participants.length;
+  const checkedInCount = participants.filter((participant) => participant.checked_in).length;
+  const eligibleParticipants = tournament ? getEligibleParticipantsForBracket(tournament) : [];
+  const eligibleCount = eligibleParticipants.length;
+  const matches = tournament?.rounds?.flatMap((round) => round.matches ?? []) ?? [];
+  const playableMatches = matches.filter((match) => match.status !== 'bye');
+  const completedPlayableMatches = playableMatches.filter((match) => match.status === 'completed').length;
+  const allMatchesComplete = playableMatches.length > 0 && completedPlayableMatches === playableMatches.length;
+  const registrationAvailability = tournament
+    ? getTournamentRegistrationAvailability(tournament, participantCount)
+    : null;
+  const minimumParticipantsToStart = tournament?.format === 'double_elimination' ? 4 : 2;
+  const hasEnoughEligiblePlayers = eligibleCount >= minimumParticipantsToStart;
+
+  const lifecycleMessage = (() => {
+    if (!tournament) return null;
+
+    if (tournament.status === 'draft') {
+      return {
+        severity: 'warning' as const,
+        title: 'Draft mode',
+        description: tournament.published
+          ? 'This tournament is visible on the site, but registration is still closed until you open it.'
+          : 'This tournament is hidden from the public. Publish it and open registration when you are ready.',
+      };
+    }
+
+    if (tournament.status === 'open') {
+      return {
+        severity: 'info' as const,
+        title: 'Registration is live',
+        description: tournament.check_in_required
+          ? 'When walk-ins and payments begin, move this event into Check-In so you can confirm paid players before the bracket locks.'
+          : 'Keep registration open until the field is ready, then start the tournament to generate the bracket.',
+      };
+    }
+
+    if (tournament.status === 'check_in') {
+      return {
+        severity: 'info' as const,
+        title: 'Check-In is active',
+        description: 'Mark paid players checked in on the Participants tab. Only checked-in players will be used when the bracket is generated.',
+      };
+    }
+
+    if (tournament.status === 'live') {
+      return {
+        severity: allMatchesComplete ? 'success' as const : 'info' as const,
+        title: allMatchesComplete ? 'All matches are complete' : 'Tournament is live',
+        description: allMatchesComplete
+          ? 'You can mark the tournament completed now to lock in the results and show the podium view publicly.'
+          : 'Use Operations to assign tables, start matches, and report results as the event progresses.',
+      };
+    }
+
+    if (tournament.status === 'completed') {
+      return {
+        severity: 'success' as const,
+        title: 'Tournament completed',
+        description: 'This event is closed out. Public results and final standings are now the main experience.',
+      };
+    }
+
+    return {
+      severity: 'warning' as const,
+      title: 'Tournament cancelled',
+      description: 'This event is cancelled and no longer accepting players or match activity.',
+    };
+  })();
+
+  const preflightWarnings = tournament
+    ? [
+        !tournament.published
+          ? 'This tournament is still unpublished. Staff can run it, but players will not see the public event page.'
+          : null,
+        tournament.check_in_required && tournament.status === 'open'
+          ? 'Check-in is required. The recommended flow is to open Check-In first so payment can be confirmed before the bracket locks.'
+          : null,
+        registrationAvailability?.isOpen
+          ? 'Registration is currently open. Starting the tournament now will close new signups immediately.'
+          : null,
+        !hasEnoughEligiblePlayers
+          ? `You need at least ${minimumParticipantsToStart} eligible players to start this ${tournament.format.replace(/_/g, ' ')} event.`
+          : null,
+      ].filter((warning): warning is string => Boolean(warning))
+    : [];
 
   if (loading) {
     return (
@@ -380,12 +519,12 @@ export default function TournamentEditPage() {
           {transitions.map((t) => (
             <Button
               key={t.next}
-              variant={t.next === 'cancelled' ? 'outlined' : 'contained'}
+              variant={t.tone === 'primary' ? 'contained' : 'outlined'}
               size="small"
-              onClick={() => handleStatusChange(t.next)}
+              onClick={() => handleStatusAction(t.next)}
               disabled={saving}
               sx={
-                t.next === 'cancelled'
+                t.tone === 'danger'
                   ? {
                       borderColor: 'rgba(239,83,80,0.4)',
                       color: '#ef5350',
@@ -395,6 +534,16 @@ export default function TournamentEditPage() {
                       transition: 'all 0.3s ease',
                       '&:hover': { borderColor: '#ef5350', bgcolor: 'rgba(239,83,80,0.08)' },
                     }
+                  : t.tone === 'secondary'
+                    ? {
+                        borderColor: 'rgba(66,165,245,0.35)',
+                        color: '#90caf9',
+                        textTransform: 'none',
+                        fontSize: '0.85rem',
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        '&:hover': { borderColor: '#42a5f5', bgcolor: 'rgba(66,165,245,0.08)' },
+                      }
                   : {
                       bgcolor: '#D4AF37',
                       color: '#050505',
@@ -442,6 +591,75 @@ export default function TournamentEditPage() {
           {success}
         </Alert>
       )}
+
+      {lifecycleMessage && (
+        <Alert
+          severity={lifecycleMessage.severity}
+          sx={{
+            mb: 3,
+            bgcolor:
+              lifecycleMessage.severity === 'success'
+                ? 'rgba(102,187,106,0.1)'
+                : lifecycleMessage.severity === 'warning'
+                  ? 'rgba(255,167,38,0.1)'
+                  : 'rgba(66,165,245,0.1)',
+            color:
+              lifecycleMessage.severity === 'success'
+                ? '#66bb6a'
+                : lifecycleMessage.severity === 'warning'
+                  ? '#ffb74d'
+                  : '#90caf9',
+          }}
+        >
+          <Typography sx={{ fontWeight: 700, mb: 0.5 }}>{lifecycleMessage.title}</Typography>
+          <Typography variant="body2">{lifecycleMessage.description}</Typography>
+        </Alert>
+      )}
+
+      <Paper
+        elevation={0}
+        sx={{
+          mb: 3,
+          p: 2.5,
+          bgcolor: 'rgba(10, 10, 10, 0.45)',
+          border: '1px solid rgba(212,175,55,0.12)',
+          borderRadius: 2,
+        }}
+      >
+        <Typography variant="subtitle2" sx={{ color: '#f5f5f0', fontWeight: 700, mb: 1.5 }}>
+          Tournament Readiness
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          {[
+            { label: tournament.published ? 'Published' : 'Hidden', value: tournament.published ? 'Public page visible' : 'Public page hidden' },
+            { label: 'Registration', value: tournament.status === 'check_in' ? 'Closed for check-in' : registrationAvailability?.message ?? 'Not available' },
+            { label: 'Players', value: `${participantCount} registered` },
+            { label: 'Checked In', value: `${checkedInCount} confirmed` },
+            { label: 'Bracket Eligible', value: `${eligibleCount} eligible` },
+            { label: 'Matches', value: playableMatches.length > 0 ? `${completedPlayableMatches} / ${playableMatches.length} completed` : 'Bracket not generated' },
+          ].map((item) => (
+            <Box
+              key={item.label}
+              sx={{
+                minWidth: { xs: '100%', sm: 180 },
+                flex: '1 1 180px',
+                px: 1.5,
+                py: 1.25,
+                borderRadius: 1.5,
+                bgcolor: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.05)',
+              }}
+            >
+              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.35, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                {item.label}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#f5f5f0', fontWeight: 600 }}>
+                {item.value}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+      </Paper>
 
       {/* Tab Navigation */}
       <Paper
@@ -635,42 +853,35 @@ export default function TournamentEditPage() {
 
             {/* Start Date */}
             <Grid size={{ xs: 12, md: 4 }}>
-              <TextField
-                fullWidth
+              <DateTimePickerField
                 label="Start Date & Time"
-                type="datetime-local"
                 value={form.tournament_start_at}
-                onChange={(e) => updateField('tournament_start_at', e.target.value)}
+                onChange={(value) => updateField('tournament_start_at', value)}
                 error={!!validationErrors.tournament_start_at}
-                helperText={validationErrors.tournament_start_at}
+                helperText={validationErrors.tournament_start_at || 'Required. Pick the tournament day and start time.'}
                 required
-                slotProps={{ inputLabel: { shrink: true } }}
                 sx={goldInputSx}
               />
             </Grid>
 
             {/* Registration Open */}
             <Grid size={{ xs: 12, md: 4 }}>
-              <TextField
-                fullWidth
+              <DateTimePickerField
                 label="Registration Opens"
-                type="datetime-local"
                 value={form.registration_open_at}
-                onChange={(e) => updateField('registration_open_at', e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
+                onChange={(value) => updateField('registration_open_at', value)}
+                helperText="Optional. Leave blank if registration should open immediately."
                 sx={goldInputSx}
               />
             </Grid>
 
             {/* Registration Close */}
             <Grid size={{ xs: 12, md: 4 }}>
-              <TextField
-                fullWidth
+              <DateTimePickerField
                 label="Registration Closes"
-                type="datetime-local"
                 value={form.registration_close_at}
-                onChange={(e) => updateField('registration_close_at', e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
+                onChange={(value) => updateField('registration_close_at', value)}
+                helperText="Optional. Leave blank if you do not want a registration cutoff."
                 sx={goldInputSx}
               />
             </Grid>
@@ -743,6 +954,110 @@ export default function TournamentEditPage() {
           </Box>
         </Box>
       </Paper>
+
+      <Dialog
+        open={statusDialogOpen}
+        onClose={() => !saving && setStatusDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#0a0a0a',
+            border: '1px solid rgba(212,175,55,0.24)',
+            borderRadius: 2,
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: '#f5f5f0', fontFamily: 'var(--font-playfair), serif' }}>
+          Start Tournament
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ color: 'text.secondary', mb: 2 }}>
+            Starting the tournament will generate the bracket if needed and close public registration.
+          </DialogContentText>
+
+          <Box sx={{ display: 'grid', gap: 1, mb: 2 }}>
+            {[
+              { label: 'Format', value: tournament.format.replace(/_/g, ' ') },
+              { label: 'Registered Players', value: participantCount.toString() },
+              { label: 'Checked-In Players', value: checkedInCount.toString() },
+              { label: 'Bracket Eligible', value: eligibleCount.toString() },
+              { label: 'Registration', value: registrationAvailability?.isOpen ? 'Still open' : 'Already closed' },
+            ].map((item) => (
+              <Box
+                key={item.label}
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 2,
+                  px: 1.5,
+                  py: 1.1,
+                  borderRadius: 1.5,
+                  bgcolor: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                }}
+              >
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  {item.label}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#f5f5f0', fontWeight: 700, textTransform: item.label === 'Format' ? 'capitalize' : 'none' }}>
+                  {item.value}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+
+          {preflightWarnings.length > 0 && (
+            <Alert severity="warning" sx={{ bgcolor: 'rgba(255,167,38,0.1)', color: '#ffb74d' }}>
+              <Typography sx={{ fontWeight: 700, mb: 0.75 }}>Before you go live</Typography>
+              {preflightWarnings.map((warning) => (
+                <Typography key={warning} variant="body2" sx={{ mb: 0.5 }}>
+                  {warning}
+                </Typography>
+              ))}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          {tournament.check_in_required && tournament.status === 'open' && (
+            <Button
+              onClick={() => {
+                setStatusDialogOpen(false);
+                void handleStatusChange('check_in');
+              }}
+              disabled={saving}
+              sx={{ color: '#90caf9', textTransform: 'none', mr: 'auto' }}
+            >
+              Open Check-In Instead
+            </Button>
+          )}
+          <Button
+            onClick={() => setStatusDialogOpen(false)}
+            disabled={saving}
+            sx={{ color: 'text.secondary', textTransform: 'none' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setStatusDialogOpen(false);
+              void handleStatusChange('live');
+            }}
+            disabled={saving || !hasEnoughEligiblePlayers}
+            sx={{
+              bgcolor: '#D4AF37',
+              color: '#050505',
+              textTransform: 'none',
+              fontWeight: 700,
+              '&:hover': { bgcolor: '#e5c150' },
+              '&:disabled': { bgcolor: 'rgba(212,175,55,0.25)', color: 'rgba(5,5,5,0.55)' },
+            }}
+          >
+            Start Tournament
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog

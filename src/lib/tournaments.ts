@@ -18,7 +18,7 @@ import {
   type GeneratedMatchForSave,
 } from './tournament-engine/materialize-generated-bracket';
 
-const REGISTRATION_OPEN_STATUSES: TournamentStatus[] = ['open', 'check_in'];
+const REGISTRATION_OPEN_STATUSES: TournamentStatus[] = ['open'];
 
 export interface TournamentRegistrationAvailability {
   isOpen: boolean;
@@ -92,7 +92,9 @@ export function getTournamentRegistrationAvailability(
       isOpen: false,
       reason: 'status',
       message:
-        tournament.status === 'live'
+        tournament.status === 'check_in'
+          ? 'Registration is closed while check-in is in progress.'
+          : tournament.status === 'live'
           ? 'Registration closes once tournament play begins.'
           : tournament.status === 'completed'
             ? 'Registration is closed for completed tournaments.'

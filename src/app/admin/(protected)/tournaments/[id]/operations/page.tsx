@@ -40,6 +40,7 @@ import {
   getMatches,
   updateMatch,
   applyMatchUpdates,
+  updateTournament,
 } from '@/lib/tournaments';
 import { advanceWinner, canCorrectMatch, revertMatch } from '@/lib/tournament-engine/advancement';
 
@@ -106,6 +107,7 @@ export default function OperationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [completingTournament, setCompletingTournament] = useState(false);
 
   // Table assignment state
   const [tableInputs, setTableInputs] = useState<Record<string, string>>({});
@@ -196,6 +198,7 @@ export default function OperationsPage() {
   const inProgressCount = activeMatches.length;
   const readyCount = readyMatches.length;
   const pendingCount = matchesWithPlayers.filter((m) => m.status === 'pending').length;
+  const allPlayableMatchesCompleted = totalMatches > 0 && completedCount === totalMatches;
 
   // ----------------------------------------------------------
   // Actions
@@ -380,6 +383,23 @@ export default function OperationsPage() {
     }
   };
 
+  const handleMarkTournamentCompleted = async () => {
+    if (!tournament) return;
+
+    try {
+      setError(null);
+      setSuccess(null);
+      setCompletingTournament(true);
+      await updateTournament(tournament.id, { status: 'completed' });
+      setTournament((previous) => (previous ? { ...previous, status: 'completed' } : previous));
+      setSuccess('Tournament marked as completed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to complete tournament');
+    } finally {
+      setCompletingTournament(false);
+    }
+  };
+
   // ----------------------------------------------------------
   // Loading state
   // ----------------------------------------------------------
@@ -494,6 +514,33 @@ export default function OperationsPage() {
       {success && (
         <Alert severity="success" sx={{ mb: 2, bgcolor: 'rgba(102,187,106,0.1)', color: '#66bb6a' }} onClose={() => setSuccess(null)}>
           {success}
+        </Alert>
+      )}
+
+      {allPlayableMatchesCompleted && tournament.status !== 'completed' && tournament.status !== 'cancelled' && (
+        <Alert
+          severity="success"
+          sx={{
+            mb: 2,
+            bgcolor: 'rgba(102,187,106,0.1)',
+            color: '#66bb6a',
+            alignItems: 'center',
+          }}
+          action={
+            <Button
+              onClick={handleMarkTournamentCompleted}
+              disabled={completingTournament}
+              sx={{
+                color: '#66bb6a',
+                fontWeight: 700,
+                textTransform: 'none',
+              }}
+            >
+              {completingTournament ? 'Closing Out...' : 'Mark Completed'}
+            </Button>
+          }
+        >
+          All bracket matches are complete. Close out the tournament so the final results become the main public state.
         </Alert>
       )}
 

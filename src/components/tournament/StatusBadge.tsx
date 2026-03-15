@@ -6,7 +6,7 @@ import type { TournamentStatus, MatchStatus } from '@/lib/tournament-engine/type
 const tournamentStatusConfig: Record<TournamentStatus, { label: string; color: string; bgColor: string; pulse?: boolean }> = {
   draft: { label: 'Draft', color: '#888', bgColor: 'rgba(136,136,136,0.12)' },
   open: { label: 'Registration Open', color: '#D4AF37', bgColor: 'rgba(212,175,55,0.12)' },
-  check_in: { label: 'Check-In', color: '#42a5f5', bgColor: 'rgba(66,165,245,0.12)' },
+  check_in: { label: 'Check-In Open', color: '#42a5f5', bgColor: 'rgba(66,165,245,0.12)' },
   live: { label: 'LIVE', color: '#D4AF37', bgColor: 'rgba(212,175,55,0.15)', pulse: true },
   completed: { label: 'Completed', color: '#39a87a', bgColor: 'rgba(57,168,122,0.12)' },
   cancelled: { label: 'Cancelled', color: '#ef5350', bgColor: 'rgba(239,83,80,0.12)' },
