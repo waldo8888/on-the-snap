@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { Box, Paper, Typography } from '@mui/material';
-import SportsBarIcon from '@mui/icons-material/SportsBar';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 interface AdminAuthShellProps {
   title: string;
@@ -37,7 +37,7 @@ export default function AdminAuthShell({
         }}
       >
         <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <SportsBarIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
+          <AdminPanelSettingsIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
           <Typography
             variant="h4"
             sx={{

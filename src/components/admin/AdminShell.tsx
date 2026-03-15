@@ -25,7 +25,6 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import AddIcon from '@mui/icons-material/Add';
 import LogoutIcon from '@mui/icons-material/Logout';
-import SportsBarIcon from '@mui/icons-material/SportsBar';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import type { AdminRole } from '@/lib/admin-auth';
 
@@ -71,7 +70,7 @@ export default function AdminShell({ children, user }: AdminShellProps) {
   const drawer = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <SportsBarIcon sx={{ color: 'primary.main', fontSize: 28 }} />
+        <AdminPanelSettingsIcon sx={{ color: 'primary.main', fontSize: 28 }} />
         <Typography
           variant="h6"
           sx={{

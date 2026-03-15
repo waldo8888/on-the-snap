@@ -23,6 +23,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
 import { createTournament, generateSlug } from '@/lib/tournaments';
 import type { TournamentFormat, GameType } from '@/lib/tournament-engine/types';
+import DateTimePickerField from '@/components/admin/DateTimePickerField';
 
 const FORMATS: { value: TournamentFormat; label: string }[] = [
   { value: 'single_elimination', label: 'Single Elimination' },
@@ -330,42 +331,35 @@ export default function NewTournamentPage() {
 
           {/* Start Date */}
           <Grid size={{ xs: 12, md: 4 }}>
-            <TextField
-              fullWidth
+            <DateTimePickerField
               label="Start Date & Time"
-              type="datetime-local"
               value={form.tournament_start_at}
-              onChange={(e) => updateField('tournament_start_at', e.target.value)}
+              onChange={(value) => updateField('tournament_start_at', value)}
               error={!!validationErrors.tournament_start_at}
-              helperText={validationErrors.tournament_start_at}
+              helperText={validationErrors.tournament_start_at || 'Required. Pick the tournament day and start time.'}
               required
-              slotProps={{ inputLabel: { shrink: true } }}
               sx={goldInputSx}
             />
           </Grid>
 
           {/* Registration Open */}
           <Grid size={{ xs: 12, md: 4 }}>
-            <TextField
-              fullWidth
+            <DateTimePickerField
               label="Registration Opens"
-              type="datetime-local"
               value={form.registration_open_at}
-              onChange={(e) => updateField('registration_open_at', e.target.value)}
-              slotProps={{ inputLabel: { shrink: true } }}
+              onChange={(value) => updateField('registration_open_at', value)}
+              helperText="Optional. Leave blank if registration should open immediately."
               sx={goldInputSx}
             />
           </Grid>
 
           {/* Registration Close */}
           <Grid size={{ xs: 12, md: 4 }}>
-            <TextField
-              fullWidth
+            <DateTimePickerField
               label="Registration Closes"
-              type="datetime-local"
               value={form.registration_close_at}
-              onChange={(e) => updateField('registration_close_at', e.target.value)}
-              slotProps={{ inputLabel: { shrink: true } }}
+              onChange={(value) => updateField('registration_close_at', value)}
+              helperText="Optional. Leave blank if you do not want a registration cutoff."
               sx={goldInputSx}
             />
           </Grid>
