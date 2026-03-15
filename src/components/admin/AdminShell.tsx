@@ -26,6 +26,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import AddIcon from '@mui/icons-material/Add';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import SportsScoreIcon from '@mui/icons-material/SportsScore';
 import type { AdminRole } from '@/lib/admin-auth';
 
 const DRAWER_WIDTH = 260;
@@ -50,6 +51,7 @@ export default function AdminShell({ children, user }: AdminShellProps) {
   const navItems = [
     { label: 'Dashboard', path: '/admin', icon: <DashboardIcon /> },
     { label: 'Tournaments', path: '/admin/tournaments', icon: <EmojiEventsIcon /> },
+    { label: 'Leagues', path: '/admin/leagues', icon: <SportsScoreIcon /> },
     { label: 'New Tournament', path: '/admin/tournaments/new', icon: <AddIcon /> },
     ...(user.role === 'owner'
       ? [

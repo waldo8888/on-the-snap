@@ -7,6 +7,7 @@ export type GameType = '8-ball' | '9-ball' | '10-ball' | 'straight_pool' | 'scot
 export type TournamentStatus = 'draft' | 'open' | 'check_in' | 'live' | 'completed' | 'cancelled';
 export type MatchStatus = 'pending' | 'ready' | 'in_progress' | 'completed' | 'bye';
 export type BracketSide = 'winners' | 'losers' | 'finals' | 'round_robin';
+export type SeasonStatus = 'draft' | 'active' | 'completed';
 
 // ============================================================
 // Database Row Types (match InsForge schema)
@@ -15,6 +16,7 @@ export type BracketSide = 'winners' | 'losers' | 'finals' | 'round_robin';
 export interface Tournament {
   id: string;
   slug: string;
+  season_id: string | null;
   title: string;
   description: string | null;
   format: TournamentFormat;
@@ -44,6 +46,7 @@ export interface Tournament {
 export interface Participant {
   id: string;
   tournament_id: string;
+  player_id: string | null;
   name: string;
   email: string | null;
   phone: string | null;
@@ -54,6 +57,118 @@ export interface Participant {
   notes: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface Player {
+  id: string;
+  display_name: string;
+  normalized_name: string;
+  primary_email: string | null;
+  primary_phone: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface League {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  game_type: GameType | null;
+  published: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Season {
+  id: string;
+  league_id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  status: SeasonStatus;
+  published: boolean;
+  start_at: string;
+  end_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SeasonLeaderboardEntry extends PlayerCareerStats {
+  season_id: string;
+  league_id: string;
+  points: number;
+}
+
+export interface ScorekeeperStation {
+  id: string;
+  tournament_id: string;
+  table_number: number;
+  label: string | null;
+  pin_hash: string;
+  active: boolean;
+  last_used_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ScorekeeperStationSummary = Omit<ScorekeeperStation, 'pin_hash'>;
+
+export interface PlayerCareerStats {
+  player_id: string;
+  display_name: string;
+  tournaments_played: number;
+  matches_played: number;
+  match_wins: number;
+  match_losses: number;
+  win_rate: number;
+  titles: number;
+  runner_ups: number;
+  last_played_at: string | null;
+}
+
+export interface PlayerLeaderboardEntry extends PlayerCareerStats {
+  points: number;
+}
+
+export interface PlayerProfileSummary {
+  favorite_game_type: GameType | null;
+  best_finish: number | null;
+  last_five_form: Array<'W' | 'L'>;
+}
+
+export interface PlayerTournamentHistoryEntry {
+  tournament_id: string;
+  tournament_slug: string;
+  tournament_title: string;
+  tournament_format: TournamentFormat;
+  tournament_game_type: GameType;
+  tournament_status: TournamentStatus;
+  tournament_start_at: string;
+  participant_id: string;
+  participant_name: string;
+  participant_seed: number | null;
+  final_place: number | null;
+  recent_result: string | null;
+}
+
+export interface PlayerMatchHistoryEntry extends Match {
+  tournament_slug: string;
+  tournament_title: string;
+  opponent_name: string;
+  opponent_player_id: string | null;
+  result: 'win' | 'loss';
+  scoreline: string | null;
+}
+
+export interface PlayerProfileData {
+  player: Player;
+  stats: PlayerCareerStats;
+  tournaments: PlayerTournamentHistoryEntry[];
+  matches: PlayerMatchHistoryEntry[];
+  summary: PlayerProfileSummary;
 }
 
 export interface Round {
@@ -162,8 +277,23 @@ export interface MatchUpdate {
 // ============================================================
 
 export interface TournamentWithDetails extends Tournament {
+  season?: Season | null;
+  league?: League | null;
   participants?: Participant[];
   rounds?: (Round & { matches?: Match[] })[];
+}
+
+export interface LeagueWithDetails extends League {
+  seasons?: Season[];
+  activeSeason?: Season | null;
+  recentTournaments?: Tournament[];
+  standingsPreview?: SeasonLeaderboardEntry[];
+}
+
+export interface SeasonWithDetails extends Season {
+  league?: League | null;
+  tournaments?: Tournament[];
+  standings?: SeasonLeaderboardEntry[];
 }
 
 export interface MatchWithPlayers extends Match {

@@ -10,6 +10,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import Link from 'next/link';
 import TournamentDetailTabs from './TournamentDetailTabs';
 import TournamentRegistrationCard from './TournamentRegistrationCard';
+import ShareButton from '@/components/tournament/ShareButton';
 
 export const revalidate = 60;
 
@@ -160,6 +161,7 @@ export default async function TournamentDetailPage({
         <Box sx={{ mb: 5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
             <StatusBadge status={tournament.status} />
+            <ShareButton />
             <Box sx={{ display: 'flex', gap: 0.75 }}>
               <Chip
                 icon={<SportsIcon sx={{ fontSize: 14, color: '#39a87a !important' }} />}
