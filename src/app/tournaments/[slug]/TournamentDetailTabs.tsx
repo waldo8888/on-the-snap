@@ -586,6 +586,23 @@ function PlayersPanel({ tournament }: Props) {
 
 // ── Results Tab ──
 
+function formatOrdinal(place: number) {
+  const remainderTen = place % 10;
+  const remainderHundred = place % 100;
+
+  if (remainderTen === 1 && remainderHundred !== 11) return `${place}st`;
+  if (remainderTen === 2 && remainderHundred !== 12) return `${place}nd`;
+  if (remainderTen === 3 && remainderHundred !== 13) return `${place}rd`;
+  return `${place}th`;
+}
+
+function getRecentResultLabel(match: Match, participantId: string) {
+  if (match.player1_score === null || match.player2_score === null) return null;
+  if (match.player1_id === participantId) return `${match.player1_score} - ${match.player2_score}`;
+  if (match.player2_id === participantId) return `${match.player2_score} - ${match.player1_score}`;
+  return null;
+}
+
 function ResultsPanel({ tournament }: Props) {
   const participants = tournament.participants || [];
   const rounds = tournament.rounds || [];
@@ -609,9 +626,21 @@ function ResultsPanel({ tournament }: Props) {
 
   const finalMatch = completedMatches[0];
   const championId = finalMatch?.winner_id;
+  const recentResultMap = new Map<string, string>();
 
   // Build simple standings: champion first, runner-up second, rest by elimination order
   const standings: { participant: Participant; place: number }[] = [];
+
+  completedMatches.forEach((match) => {
+    if (match.player1_id && !recentResultMap.has(match.player1_id)) {
+      const label = getRecentResultLabel(match, match.player1_id);
+      if (label) recentResultMap.set(match.player1_id, label);
+    }
+    if (match.player2_id && !recentResultMap.has(match.player2_id)) {
+      const label = getRecentResultLabel(match, match.player2_id);
+      if (label) recentResultMap.set(match.player2_id, label);
+    }
+  });
 
   if (tournament.format === 'round_robin') {
     // Use win count for round robin
@@ -667,100 +696,221 @@ function ResultsPanel({ tournament }: Props) {
     }
   }
 
+  const podium = standings.slice(0, 3);
+  const remainingStandings = standings.slice(3);
+  const podiumConfig = {
+    1: {
+      label: '1st',
+      title: 'Champion',
+      accent: '#D4AF37',
+      gradient: 'linear-gradient(180deg, rgba(255,224,130,0.95) 0%, rgba(212,175,55,0.95) 100%)',
+      shadow: '0 18px 40px rgba(212,175,55,0.18)',
+    },
+    2: {
+      label: '2nd',
+      title: 'Runner-Up',
+      accent: '#c7cad6',
+      gradient: 'linear-gradient(180deg, rgba(238,240,247,0.95) 0%, rgba(170,176,198,0.95) 100%)',
+      shadow: '0 16px 34px rgba(199,202,214,0.14)',
+    },
+    3: {
+      label: '3rd',
+      title: 'Third Place',
+      accent: '#d18a62',
+      gradient: 'linear-gradient(180deg, rgba(246,195,164,0.95) 0%, rgba(186,110,70,0.95) 100%)',
+      shadow: '0 16px 34px rgba(209,138,98,0.14)',
+    },
+  } as const;
+
+  if (standings.length === 0) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 6 }}>
+        <Typography sx={{ fontFamily: '"Inter", sans-serif', color: '#a0a0a0' }}>
+          Final standings are not available yet.
+        </Typography>
+      </Box>
+    );
+  }
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {/* Champion Highlight */}
-      {standings.length > 0 && standings[0].place === 1 && (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: `repeat(${podium.length >= 3 ? 3 : podium.length}, minmax(0, 1fr))` },
+          gap: 2,
+        }}
+      >
+        {podium.map((entry) => {
+          const medal = podiumConfig[entry.place as 1 | 2 | 3];
+          const resultLabel = recentResultMap.get(entry.participant.id);
+
+          return (
+            <Paper
+              key={entry.participant.id}
+              elevation={0}
+              sx={{
+                p: 2.25,
+                bgcolor: '#111111',
+                border: `1px solid ${medal.accent}35`,
+                borderRadius: 2.5,
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: medal.shadow,
+                backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(17,17,17,0) 100%)`,
+              }}
+            >
+              <Box
+                sx={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: `linear-gradient(135deg, ${medal.accent}12 0%, transparent 42%)`,
+                  pointerEvents: 'none',
+                }}
+              />
+
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, position: 'relative' }}>
+                <Box
+                  sx={{
+                    width: 82,
+                    height: 82,
+                    borderRadius: 2.5,
+                    background: medal.gradient,
+                    color: entry.place === 1 ? '#111' : '#161616',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    border: '1px solid rgba(255,255,255,0.28)',
+                  }}
+                >
+                  <EmojiEventsIcon sx={{ fontSize: 24, mb: 0.25 }} />
+                  <Typography sx={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                    {medal.label}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography
+                    sx={{
+                      fontFamily: '"Inter", sans-serif',
+                      fontSize: '0.72rem',
+                      color: `${medal.accent}`,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.12em',
+                      fontWeight: 700,
+                      mb: 0.5,
+                    }}
+                  >
+                    {medal.title}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: '"Playfair Display", serif',
+                      fontSize: { xs: '1.15rem', md: '1.3rem' },
+                      color: '#f5f5f0',
+                      fontWeight: 700,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {entry.participant.name}
+                  </Typography>
+                  {resultLabel && (
+                    <Typography
+                      sx={{
+                        fontFamily: '"Inter", sans-serif',
+                        fontSize: '0.9rem',
+                        color: '#d7d7d2',
+                        fontWeight: 600,
+                        mt: 1,
+                      }}
+                    >
+                      Last result: {resultLabel}
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            </Paper>
+          );
+        })}
+      </Box>
+
+      {remainingStandings.length > 0 && (
         <Paper
           elevation={0}
           sx={{
-            p: 3,
-            bgcolor: 'rgba(212,175,55,0.06)',
-            border: '1px solid rgba(212,175,55,0.3)',
+            bgcolor: '#111111',
+            border: '1px solid rgba(212,175,55,0.12)',
             borderRadius: 2,
-            textAlign: 'center',
-            mb: 1,
+            overflow: 'hidden',
           }}
         >
-          <EmojiEventsIcon sx={{ fontSize: 40, color: '#D4AF37', mb: 1 }} />
-          <Typography
-            sx={{
-              fontFamily: '"Inter", sans-serif',
-              fontSize: '0.72rem',
-              color: 'rgba(212,175,55,0.7)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              fontWeight: 600,
-              mb: 0.5,
-            }}
-          >
-            Champion
-          </Typography>
-          <Typography
-            variant="h5"
-            sx={{
-              fontFamily: '"Playfair Display", serif',
-              fontWeight: 700,
-              color: '#D4AF37',
-            }}
-          >
-            {standings[0].participant.name}
-          </Typography>
-        </Paper>
-      )}
-
-      {/* Full Standings */}
-      <Paper
-        elevation={0}
-        sx={{
-          bgcolor: '#111111',
-          border: '1px solid rgba(212,175,55,0.12)',
-          borderRadius: 2,
-          overflow: 'hidden',
-        }}
-      >
-        {standings.map((s, i) => (
-          <Box
-            key={s.participant.id}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 2,
-              px: 2.5,
-              py: 1.5,
-              borderBottom:
-                i < standings.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-              bgcolor: s.place <= 3 ? `rgba(212,175,55,${0.04 - (s.place - 1) * 0.012})` : 'transparent',
-            }}
-          >
+          <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             <Typography
               sx={{
-                fontFamily: '"Inter", sans-serif',
-                fontSize: '0.85rem',
-                fontWeight: 700,
-                color: s.place === 1 ? '#D4AF37' : s.place <= 3 ? '#a0a0a0' : 'rgba(160,160,160,0.5)',
-                minWidth: 28,
-                textAlign: 'center',
+                fontFamily: '"Playfair Display", serif',
+                fontSize: '1rem',
+                color: '#f5f5f0',
+                fontWeight: 600,
               }}
             >
-              {s.place <= 3
-                ? ['1st', '2nd', '3rd'][s.place - 1]
-                : `${s.place}th`}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: '"Inter", sans-serif',
-                fontSize: '0.9rem',
-                color: s.place === 1 ? '#D4AF37' : '#f5f5f0',
-                fontWeight: s.place === 1 ? 600 : 400,
-                flex: 1,
-              }}
-            >
-              {s.participant.name}
+              Other Finishers
             </Typography>
           </Box>
-        ))}
-      </Paper>
+
+          {remainingStandings.map((entry, index) => (
+            <Box
+              key={entry.participant.id}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                px: 2.5,
+                py: 1.4,
+                borderBottom:
+                  index < remainingStandings.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+              }}
+            >
+              <Typography
+                sx={{
+                  fontFamily: '"Inter", sans-serif',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: 'rgba(160,160,160,0.7)',
+                  minWidth: 40,
+                  textAlign: 'center',
+                }}
+              >
+                {formatOrdinal(entry.place)}
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: '"Inter", sans-serif',
+                  fontSize: '0.92rem',
+                  color: '#f5f5f0',
+                  fontWeight: 500,
+                  flex: 1,
+                }}
+              >
+                {entry.participant.name}
+              </Typography>
+              {recentResultMap.get(entry.participant.id) && (
+                <Typography
+                  sx={{
+                    fontFamily: '"Inter", sans-serif',
+                    fontSize: '0.8rem',
+                    color: '#a0a0a0',
+                    fontWeight: 600,
+                  }}
+                >
+                  {recentResultMap.get(entry.participant.id)}
+                </Typography>
+              )}
+            </Box>
+          ))}
+        </Paper>
+      )}
     </Box>
   );
 }
