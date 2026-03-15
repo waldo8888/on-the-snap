@@ -113,19 +113,36 @@ export default function AdminShell({ children, user }: AdminShellProps) {
                 }
               }}
               sx={{
-                mx: 1,
-                borderRadius: 1,
+                mx: 1.5,
+                borderRadius: 2,
                 mb: 0.5,
                 bgcolor: isActive ? 'rgba(212,175,55,0.12)' : 'transparent',
-                borderLeft: isActive ? '3px solid' : '3px solid transparent',
-                borderColor: isActive ? 'primary.main' : 'transparent',
-                '&:hover': { bgcolor: 'rgba(212,175,55,0.08)' },
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                position: 'relative',
+                overflow: 'hidden',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: '3px',
+                  bgcolor: 'primary.main',
+                  transform: isActive ? 'scaleY(1)' : 'scaleY(0)',
+                  transition: 'transform 0.3s ease',
+                  transformOrigin: 'center',
+                },
+                '&:hover': { 
+                  bgcolor: isActive ? 'rgba(212,175,55,0.16)' : 'rgba(255,255,255,0.03)',
+                  transform: 'translateX(4px)',
+                },
               }}
             >
               <ListItemIcon
                 sx={{
                   color: isActive ? 'primary.main' : 'text.secondary',
                   minWidth: 40,
+                  transition: 'color 0.3s ease',
                 }}
               >
                 {item.icon}
@@ -136,6 +153,10 @@ export default function AdminShell({ children, user }: AdminShellProps) {
                   fontSize: '0.875rem',
                   fontWeight: isActive ? 600 : 400,
                   color: isActive ? 'primary.main' : 'text.primary',
+                  sx: {
+                    transition: 'all 0.3s ease',
+                    letterSpacing: '0.02em',
+                  }
                 }}
               />
             </ListItemButton>
@@ -185,7 +206,7 @@ export default function AdminShell({ children, user }: AdminShellProps) {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#050505' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', background: 'radial-gradient(circle at 15% 50%, rgba(212, 175, 55, 0.05), transparent 40%), #050505' }}>
       {!isMobile && (
         <Drawer
           variant="permanent"
@@ -194,8 +215,10 @@ export default function AdminShell({ children, user }: AdminShellProps) {
             flexShrink: 0,
             '& .MuiDrawer-paper': {
               width: DRAWER_WIDTH,
-              bgcolor: '#0a0a0a',
+              bgcolor: 'rgba(10, 10, 10, 0.45)',
+              backdropFilter: 'blur(20px)',
               borderRight: '1px solid rgba(212,175,55,0.1)',
+              boxShadow: '4px 0 30px rgba(0,0,0,0.5)',
             },
           }}
         >
@@ -211,7 +234,8 @@ export default function AdminShell({ children, user }: AdminShellProps) {
           sx={{
             '& .MuiDrawer-paper': {
               width: DRAWER_WIDTH,
-              bgcolor: '#0a0a0a',
+              bgcolor: 'rgba(10, 10, 10, 0.85)',
+              backdropFilter: 'blur(20px)',
               borderRight: '1px solid rgba(212,175,55,0.1)',
             },
           }}
@@ -220,12 +244,16 @@ export default function AdminShell({ children, user }: AdminShellProps) {
         </Drawer>
       )}
 
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative' }}>
         {isMobile && (
           <AppBar
             position="sticky"
             elevation={0}
-            sx={{ bgcolor: '#0a0a0a', borderBottom: '1px solid rgba(212,175,55,0.1)' }}
+            sx={{ 
+               bgcolor: 'rgba(10, 10, 10, 0.6)', 
+               backdropFilter: 'blur(16px)',
+               borderBottom: '1px solid rgba(212,175,55,0.1)' 
+            }}
           >
             <Toolbar>
               <IconButton edge="start" onClick={() => setMobileOpen(true)} sx={{ color: 'primary.main' }}>
@@ -238,6 +266,7 @@ export default function AdminShell({ children, user }: AdminShellProps) {
                   fontWeight: 700,
                   color: 'primary.main',
                   fontSize: '1rem',
+                  letterSpacing: '0.02em',
                 }}
               >
                 Tournament Admin
@@ -246,7 +275,7 @@ export default function AdminShell({ children, user }: AdminShellProps) {
           </AppBar>
         )}
 
-        <Box sx={{ flex: 1, p: { xs: 2, md: 3 }, maxWidth: 1400, width: '100%', mx: 'auto' }}>
+        <Box sx={{ flex: 1, p: { xs: 2, md: 4 }, maxWidth: 1400, width: '100%', mx: 'auto', zIndex: 1 }}>
           {children}
         </Box>
       </Box>

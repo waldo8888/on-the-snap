@@ -105,9 +105,13 @@ export default function TournamentsListPage() {
           sx={{
             bgcolor: '#D4AF37',
             color: '#050505',
-            fontWeight: 600,
+            fontWeight: 700,
             textTransform: 'none',
-            '&:hover': { bgcolor: '#c5a030' },
+            borderRadius: 2,
+            px: 3,
+            boxShadow: '0 4px 14px rgba(212,175,55,0.3)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': { bgcolor: '#e5c150', transform: 'translateY(-2px)', boxShadow: '0 6px 20px rgba(212,175,55,0.4)' },
           }}
         >
           New Tournament
@@ -124,9 +128,11 @@ export default function TournamentsListPage() {
       <Paper
         elevation={0}
         sx={{
-          bgcolor: '#0a0a0a',
-          border: '1px solid rgba(212,175,55,0.1)',
-          borderRadius: 2,
+          bgcolor: 'rgba(10, 10, 10, 0.45)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(212,175,55,0.15)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+          borderRadius: 3,
           overflow: 'hidden',
         }}
       >
@@ -211,13 +217,31 @@ export default function TournamentsListPage() {
                   display: { xs: 'block', md: 'grid' },
                   gridTemplateColumns: '1fr 130px 130px 100px 160px',
                   gap: 2,
-                  px: 2.5,
-                  py: 2,
+                  px: 3,
+                  py: 2.5,
                   alignItems: 'center',
                   cursor: 'pointer',
                   borderBottom: '1px solid rgba(212,175,55,0.06)',
-                  transition: 'background-color 0.15s',
-                  '&:hover': { bgcolor: 'rgba(212,175,55,0.04)' },
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '3px',
+                    bottom: 0,
+                    bgcolor: 'primary.main',
+                    transform: 'scaleY(0)',
+                    transition: 'transform 0.3s ease',
+                    transformOrigin: 'center',
+                  },
+                  '&:hover': { 
+                    bgcolor: 'rgba(212,175,55,0.06)', 
+                    transform: 'translateX(6px)',
+                    '&::after': { transform: 'scaleY(1)' }
+                  },
                 }}
               >
                 {/* Title */}

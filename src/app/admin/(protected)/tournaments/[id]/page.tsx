@@ -93,8 +93,12 @@ const STATUS_TRANSITIONS: Record<TournamentStatus, { next: TournamentStatus; lab
 
 const goldInputSx = {
   '& .MuiOutlinedInput-root': {
-    '& fieldset': { borderColor: 'rgba(212,175,55,0.2)' },
-    '&:hover fieldset': { borderColor: 'rgba(212,175,55,0.4)' },
+    bgcolor: 'rgba(0,0,0,0.2)',
+    borderRadius: 2,
+    transition: 'all 0.3s ease',
+    '& fieldset': { borderColor: 'rgba(212,175,55,0.15)', transition: 'all 0.3s ease' },
+    '&:hover fieldset': { borderColor: 'rgba(212,175,55,0.35)' },
+    '&.Mui-focused': { bgcolor: 'rgba(0,0,0,0.4)' },
     '&.Mui-focused fieldset': { borderColor: '#D4AF37' },
   },
   '& .MuiInputLabel-root.Mui-focused': { color: '#D4AF37' },
@@ -386,16 +390,21 @@ export default function TournamentEditPage() {
                       borderColor: 'rgba(239,83,80,0.4)',
                       color: '#ef5350',
                       textTransform: 'none',
-                      fontSize: '0.8rem',
+                      fontSize: '0.85rem',
+                      borderRadius: 2,
+                      transition: 'all 0.3s ease',
                       '&:hover': { borderColor: '#ef5350', bgcolor: 'rgba(239,83,80,0.08)' },
                     }
                   : {
                       bgcolor: '#D4AF37',
                       color: '#050505',
-                      fontWeight: 600,
+                      fontWeight: 700,
                       textTransform: 'none',
-                      fontSize: '0.8rem',
-                      '&:hover': { bgcolor: '#c5a030' },
+                      fontSize: '0.85rem',
+                      borderRadius: 2,
+                      boxShadow: '0 4px 14px rgba(212,175,55,0.3)',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': { bgcolor: '#e5c150', transform: 'translateY(-2px)', boxShadow: '0 6px 20px rgba(212,175,55,0.4)' },
                     }
               }
             >
@@ -438,9 +447,11 @@ export default function TournamentEditPage() {
       <Paper
         elevation={0}
         sx={{
-          bgcolor: '#0a0a0a',
-          border: '1px solid rgba(212,175,55,0.1)',
-          borderRadius: 2,
+          bgcolor: 'rgba(10, 10, 10, 0.45)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(212,175,55,0.15)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+          borderRadius: 3,
           overflow: 'hidden',
         }}
       >
@@ -701,10 +712,14 @@ export default function TournamentEditPage() {
               sx={{
                 bgcolor: '#D4AF37',
                 color: '#050505',
-                fontWeight: 600,
+                fontWeight: 700,
                 textTransform: 'none',
-                '&:hover': { bgcolor: '#c5a030' },
-                '&:disabled': { bgcolor: 'rgba(212,175,55,0.3)', color: 'rgba(5,5,5,0.5)' },
+                borderRadius: 2,
+                px: 3,
+                boxShadow: '0 4px 14px rgba(212,175,55,0.3)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': { bgcolor: '#e5c150', transform: 'translateY(-2px)', boxShadow: '0 6px 20px rgba(212,175,55,0.4)' },
+                '&:disabled': { bgcolor: 'rgba(212,175,55,0.3)', color: 'rgba(5,5,5,0.5)', transform: 'none', boxShadow: 'none' },
               }}
             >
               {saving ? 'Saving...' : 'Save Changes'}
@@ -717,6 +732,9 @@ export default function TournamentEditPage() {
                 borderColor: 'rgba(212,175,55,0.3)',
                 color: 'text.secondary',
                 textTransform: 'none',
+                borderRadius: 2,
+                px: 2,
+                transition: 'all 0.3s ease',
                 '&:hover': { borderColor: 'rgba(212,175,55,0.5)', bgcolor: 'rgba(212,175,55,0.05)' },
               }}
             >

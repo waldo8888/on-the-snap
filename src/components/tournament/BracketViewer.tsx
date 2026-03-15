@@ -9,9 +9,9 @@ import type { Match, Round, Participant, BracketSide } from '@/lib/tournament-en
 // ============================================================
 
 const MATCH_W = 220;
-const MATCH_H = 64;
-const MATCH_GAP_Y = 16;
-const ROUND_GAP_X = 60;
+const MATCH_H = 68;
+const MATCH_GAP_Y = 24;
+const ROUND_GAP_X = 64;
 const ROUND_HEADER_H = 40;
 const PADDING = 24;
 
@@ -85,9 +85,8 @@ export default function BracketViewer({
   }, [rounds, bracketSide]);
 
   // Build layout
-  const { columns, totalWidth, totalHeight, connectorLines } = useMemo(() => {
+  const { columns, totalWidth, totalHeight, connectorPaths } = useMemo(() => {
     const cols: RoundColumn[] = [];
-    const lines: { x1: number; y1: number; x2: number; y2: number }[] = [];
     const resolveName = (id: string | null) => {
       if (!id) return 'TBD';
       return participantMap.get(id)?.name || 'TBD';
@@ -147,7 +146,8 @@ export default function BracketViewer({
       cols.push({ round, matches: matchNodes, x });
     });
 
-    // Generate connector lines
+    // Generate connector paths
+    const paths: string[] = [];
     for (let colIdx = 0; colIdx < cols.length - 1; colIdx++) {
       const currentCol = cols[colIdx];
       const nextCol = cols[colIdx + 1];
@@ -163,12 +163,8 @@ export default function BracketViewer({
         const endY = nextMatchNode.y + MATCH_H / 2;
         const midX = startX + (endX - startX) / 2;
 
-        // Horizontal from match to mid
-        lines.push({ x1: startX, y1: startY, x2: midX, y2: startY });
-        // Vertical from match to next match level
-        lines.push({ x1: midX, y1: startY, x2: midX, y2: endY });
-        // Horizontal from mid to next match
-        lines.push({ x1: midX, y1: endY, x2: endX, y2: endY });
+        const path = `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`;
+        paths.push(path);
       });
     }
 
@@ -184,7 +180,7 @@ export default function BracketViewer({
     });
     const th = maxY + PADDING;
 
-    return { columns: cols, totalWidth: tw, totalHeight: th, connectorLines: lines };
+    return { columns: cols, totalWidth: tw, totalHeight: th, connectorPaths: paths };
   }, [filteredRounds, participantMap]);
 
   // Auto-scale for display mode
@@ -215,8 +211,11 @@ export default function BracketViewer({
       sx={{
         width: '100%',
         overflow: 'auto',
-        bgcolor: displayMode ? '#000' : 'transparent',
-        borderRadius: displayMode ? 0 : 1,
+        bgcolor: displayMode ? '#000' : 'rgba(10, 10, 10, 0.45)',
+        backdropFilter: displayMode ? 'none' : 'blur(20px)',
+        border: displayMode ? 'none' : '1px solid rgba(212,175,55,0.15)',
+        borderRadius: displayMode ? 0 : 3,
+        boxShadow: displayMode ? 'none' : '0 12px 40px rgba(0,0,0,0.6)',
         position: 'relative',
         minHeight: displayMode ? '100vh' : 200,
       }}
@@ -228,15 +227,14 @@ export default function BracketViewer({
         style={{ display: 'block' }}
       >
         {/* Connector lines */}
-        {connectorLines.map((line, i) => (
-          <line
-            key={`line-${i}`}
-            x1={line.x1}
-            y1={line.y1}
-            x2={line.x2}
-            y2={line.y2}
+        {connectorPaths.map((path, i) => (
+          <path
+            key={`path-${i}`}
+            d={path}
+            fill="none"
             stroke={COLORS.line}
             strokeWidth={1.5}
+            strokeLinecap="round"
           />
         ))}
 
@@ -277,15 +275,20 @@ export default function BracketViewer({
                 style={{ cursor: onMatchClick ? 'pointer' : 'default' }}
               >
                 {/* Card background */}
+                {/* Card outline for slightly cooler look */}
                 <rect
-                  x={x}
-                  y={y}
-                  width={MATCH_W}
-                  height={MATCH_H}
-                  rx={4}
+                  x={x - 1}
+                  y={y - 1}
+                  width={MATCH_W + 2}
+                  height={MATCH_H + 2}
+                  rx={6}
                   fill={isBye ? COLORS.byeBg : COLORS.cardBg}
                   stroke={borderColor}
                   strokeWidth={isActive ? 2 : 1}
+                  style={{
+                    filter: isActive ? 'drop-shadow(0 0 12px rgba(212,175,55,0.6))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))',
+                    transition: 'all 0.3s ease',
+                  }}
                 />
 
                 {/* Active match glow */}
