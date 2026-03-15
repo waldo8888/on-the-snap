@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Container, Typography, Grid, IconButton, Divider } from '@mui/material';
+import { Box, Container, Typography, Grid, IconButton } from '@mui/material';
 import { motion } from 'framer-motion';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';

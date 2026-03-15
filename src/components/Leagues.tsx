@@ -1,21 +1,17 @@
 'use client';
 
-import { Box, Container, Typography, Grid, Chip } from '@mui/material';
+import { Box, Container, Typography, Grid, Chip, Button } from '@mui/material';
 import { motion } from 'framer-motion';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import GradeIcon from '@mui/icons-material/Grade';
-import type { Tournament } from '@/lib/challonge';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import Link from 'next/link';
+import type {
+    LeagueWithDetails,
+    PlayerLeaderboardEntry,
+    TournamentWithDetails,
+} from '@/lib/tournament-engine/types';
 import TournamentList from './TournamentList';
-
-const leagueTypes = [
-    '8-Ball',
-    '9-Ball',
-    '10-Ball',
-    'Open Doubles',
-    'Scotch Doubles',
-    'CSI Leagues',
-    'Ontario Pool Players League',
-];
 
 // Triangle rack visual using staggered ball grid
 const RACK_BALLS = [
@@ -63,10 +59,14 @@ function RackBall({ color, n, size = 36 }: { color: string; n: number; size?: nu
 }
 
 interface LeaguesProps {
-    tournaments: Tournament[];
+    tournaments: TournamentWithDetails[];
+    leagues: LeagueWithDetails[];
+    topPlayers: PlayerLeaderboardEntry[];
 }
 
-export default function Leagues({ tournaments = [] }: LeaguesProps) {
+export default function Leagues({ tournaments = [], leagues = [], topPlayers = [] }: LeaguesProps) {
+    const featuredLeagues = leagues.slice(0, 6);
+    const profileTeaser = topPlayers[0] ?? null;
     return (
         <Box
             id="leagues"
@@ -145,16 +145,81 @@ export default function Leagues({ tournaments = [] }: LeaguesProps) {
                                     maxWidth: 480,
                                 }}
                             >
-                                Join the thriving billiards community at On The Snap. From casual weekly
-                                play to official CSI and OPPL league nights — there&apos;s a seat at the table
-                                for every skill level.
+                                Follow published league seasons, check active standings, and jump straight
+                                into your player profile from the same public hub. League play stays tied to
+                                tournament results, so the season table always reflects the matches that
+                                actually counted.
                             </Typography>
+
+                            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 3 }}>
+                                <Button
+                                    component={Link}
+                                    href="/leaderboard"
+                                    variant="contained"
+                                    sx={{
+                                        bgcolor: '#D4AF37',
+                                        color: '#050505',
+                                        fontWeight: 800,
+                                        textTransform: 'none',
+                                        px: 2.5,
+                                        '&:hover': { bgcolor: '#e0bb53' },
+                                    }}
+                                >
+                                    Find Your Player Profile
+                                </Button>
+                                <Button
+                                    component={Link}
+                                    href="/leagues"
+                                    variant="outlined"
+                                    sx={{
+                                        borderColor: 'rgba(212,175,55,0.35)',
+                                        color: '#D4AF37',
+                                        textTransform: 'none',
+                                        fontWeight: 700,
+                                        '&:hover': {
+                                            borderColor: '#D4AF37',
+                                            bgcolor: 'rgba(212,175,55,0.06)',
+                                        },
+                                    }}
+                                >
+                                    Browse All Leagues
+                                </Button>
+                            </Box>
+
+                            {profileTeaser && (
+                                <Box
+                                    sx={{
+                                        mb: 4,
+                                        p: 2,
+                                        border: '1px solid rgba(212,175,55,0.18)',
+                                        bgcolor: 'rgba(212,175,55,0.06)',
+                                    }}
+                                >
+                                    <Typography sx={{ color: '#D4AF37', fontSize: '0.7rem', letterSpacing: '0.18em', textTransform: 'uppercase', mb: 1 }}>
+                                        Top Player Right Now
+                                    </Typography>
+                                    <Typography sx={{ color: '#f5f5f0', fontWeight: 700, fontSize: '1.1rem', mb: 0.5 }}>
+                                        {profileTeaser.display_name}
+                                    </Typography>
+                                    <Typography sx={{ color: '#a0a0a0', fontSize: '0.9rem', mb: 1.5 }}>
+                                        {profileTeaser.points} points, {profileTeaser.titles} titles, {profileTeaser.match_wins} match wins.
+                                    </Typography>
+                                    <Button
+                                        component={Link}
+                                        href={`/leaderboard?q=${encodeURIComponent(profileTeaser.display_name)}`}
+                                        size="small"
+                                        sx={{ color: '#D4AF37', textTransform: 'none', fontWeight: 700, px: 0 }}
+                                    >
+                                        Search the rankings for this player
+                                    </Button>
+                                </Box>
+                            )}
 
                             {/* League chips */}
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 6 }}>
-                                {leagueTypes.map((league, i) => (
+                                {(featuredLeagues.length > 0 ? featuredLeagues : []).map((league, i) => (
                                     <motion.div
-                                        key={league}
+                                        key={league.id}
                                         initial={{ opacity: 0, scale: 0.75 }}
                                         whileInView={{ opacity: 1, scale: 1 }}
                                         viewport={{ once: true }}
@@ -162,8 +227,11 @@ export default function Leagues({ tournaments = [] }: LeaguesProps) {
                                         whileHover={{ scale: 1.06, y: -2 }}
                                     >
                                         <Chip
+                                            component={Link}
+                                            href={`/leagues/${league.slug}`}
                                             icon={<GradeIcon sx={{ fontSize: '14px !important', color: 'rgba(212,175,55,0.6) !important' }} />}
-                                            label={league}
+                                            clickable
+                                            label={league.activeSeason ? `${league.name} · ${league.activeSeason.name}` : league.name}
                                             sx={{
                                                 bgcolor: 'rgba(212,175,55,0.06)',
                                                 color: 'primary.main',
@@ -273,7 +341,7 @@ export default function Leagues({ tournaments = [] }: LeaguesProps) {
                                             fontFamily: 'var(--font-inter)',
                                         }}
                                     >
-                                        Everyday Rate
+                                        Published Leagues
                                     </Typography>
                                     <Typography
                                         variant="h4"
@@ -283,67 +351,46 @@ export default function Leagues({ tournaments = [] }: LeaguesProps) {
                                             fontFamily: 'var(--font-playfair)',
                                         }}
                                     >
-                                        Table Rates
+                                        Active Season Snapshot
                                     </Typography>
 
-                                    {/* Big price */}
-                                    <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2, lineHeight: 1 }}>
-                                        <Typography
-                                            sx={{
-                                                fontSize: { xs: '1.2rem', md: '1.5rem' },
-                                                color: 'primary.main',
-                                                fontWeight: 700,
-                                                mt: { xs: 1.2, md: 1.8 },
-                                                mr: 0.5,
-                                                fontFamily: 'var(--font-inter)',
-                                            }}
-                                        >
-                                            $
-                                        </Typography>
-                                        <Typography
-                                            sx={{
-                                                fontSize: { xs: '5rem', md: '7rem' },
-                                                fontFamily: 'var(--font-playfair)',
-                                                fontWeight: 700,
-                                                color: 'text.primary',
-                                                letterSpacing: '-0.04em',
-                                                lineHeight: 1,
-                                                textShadow: '0 0 40px rgba(212,175,55,0.2)',
-                                            }}
-                                        >
-                                            16.50
-                                        </Typography>
-                                        <Box sx={{ ml: 1.5, mt: { xs: 1.5, md: 2 } }}>
-                                            <Typography sx={{ color: 'primary.main', fontSize: '1.1rem', fontWeight: 700, lineHeight: 1 }}>/ HR</Typography>
-                                            <Typography sx={{ color: 'text.secondary', fontSize: '0.65rem', letterSpacing: '0.1em', mt: 0.5 }}>PER TABLE</Typography>
-                                        </Box>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                                        {(featuredLeagues.length > 0 ? featuredLeagues : []).slice(0, 3).map((league) => (
+                                            <Box
+                                                key={league.id}
+                                                sx={{
+                                                    p: 1.5,
+                                                    border: '1px solid rgba(212,175,55,0.12)',
+                                                    bgcolor: 'rgba(255,255,255,0.02)',
+                                                }}
+                                            >
+                                                <Typography sx={{ color: '#f5f5f0', fontWeight: 700, mb: 0.5 }}>
+                                                    {league.name}
+                                                </Typography>
+                                                <Typography sx={{ color: '#a0a0a0', fontSize: '0.85rem', mb: 0.75 }}>
+                                                    {league.activeSeason
+                                                        ? `${league.activeSeason.name} · ${league.recentTournaments?.length ?? 0} linked tournaments`
+                                                        : 'No active season right now'}
+                                                </Typography>
+                                                {league.standingsPreview && league.standingsPreview.length > 0 ? (
+                                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                                        {league.standingsPreview.slice(0, 3).map((entry, index) => (
+                                                            <Typography
+                                                                key={`${league.id}-${entry.player_id}`}
+                                                                sx={{ color: index === 0 ? '#D4AF37' : 'rgba(245,245,240,0.76)', fontSize: '0.82rem' }}
+                                                            >
+                                                                {index + 1}. {entry.display_name} · {entry.points} pts
+                                                            </Typography>
+                                                        ))}
+                                                    </Box>
+                                                ) : (
+                                                    <Typography sx={{ color: 'rgba(245,245,240,0.6)', fontSize: '0.8rem' }}>
+                                                        Standings will appear after linked tournaments start reporting results.
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        ))}
                                     </Box>
-
-                                    {/* Gold divider */}
-                                    <Box sx={{ width: '100%', height: '1px', background: 'linear-gradient(90deg, rgba(212,175,55,0.6), transparent)', mb: 4, mt: 2 }} />
-
-                                    <Typography
-                                        variant="body1"
-                                        sx={{
-                                            color: 'text.secondary',
-                                            lineHeight: 1.9,
-                                            fontSize: '1rem',
-                                            mb: 4,
-                                        }}
-                                    >
-                                        Walk-ins always welcome. Reservations recommended
-                                        for peak hours &amp; league nights. No hustle — just pure game.
-                                    </Typography>
-
-                                    {/* Feature list */}
-                                    {['Premium Simonis felt tables', 'Aramith tournament balls', 'House cues & chalk provided', 'Walk-ins welcome'].map((feat) => (
-                                        <Box key={feat} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-                                            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main', flexShrink: 0, boxShadow: '0 0 8px rgba(212,175,55,0.6)' }} />
-                                            <Typography sx={{ color: 'rgba(245,245,240,0.7)', fontSize: '0.88rem' }}>
-                                                {feat}
-                                            </Typography>
-                                        </Box>
-                                    ))}
                                 </Box>
                             </Box>
                         </motion.div>
@@ -351,6 +398,28 @@ export default function Leagues({ tournaments = [] }: LeaguesProps) {
                 </Grid>
 
                 <TournamentList tournaments={tournaments} />
+
+                <Box sx={{ textAlign: 'center', mt: 4 }}>
+                    <Button
+                        component={Link}
+                        href="/tournaments"
+                        variant="outlined"
+                        endIcon={<ArrowForwardIcon />}
+                        sx={{
+                            borderColor: 'rgba(212,175,55,0.4)',
+                            color: 'primary.main',
+                            px: 4,
+                            py: 1.5,
+                            letterSpacing: '0.1em',
+                            '&:hover': {
+                                borderColor: 'primary.main',
+                                bgcolor: 'rgba(212,175,55,0.08)',
+                            },
+                        }}
+                    >
+                        View All Tournaments
+                    </Button>
+                </Box>
             </Container>
         </Box>
     );
