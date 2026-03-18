@@ -403,6 +403,21 @@ const BracketViewer = forwardRef<SVGSVGElement, BracketViewerProps>(function Bra
                   </>
                 )}
 
+                {/* Scheduled time */}
+                {match.scheduled_at && (
+                  <text
+                    x={x + 10}
+                    y={y + MATCH_H - 4}
+                    textAnchor="start"
+                    fill={COLORS.gold}
+                    fontSize={8}
+                    fontFamily="var(--font-inter), sans-serif"
+                    opacity={0.7}
+                  >
+                    {new Date(match.scheduled_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                  </text>
+                )}
+
                 {/* Match number */}
                 <text
                   x={x + MATCH_W - 10}

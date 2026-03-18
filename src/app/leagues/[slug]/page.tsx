@@ -1,10 +1,48 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Box, Button, Container, Grid, Paper, Typography } from '@mui/material';
 import Navbar from '@/components/Navbar';
-import { getLeagueBySlug } from '@/lib/tournaments';
+import { getLeagueBySlug, getLeagues } from '@/lib/tournaments';
+import { BreadcrumbJsonLd } from '@/lib/json-ld';
 
 export const revalidate = 120;
+
+export async function generateStaticParams() {
+  try {
+    const leagues = await getLeagues({ published: true });
+    return leagues.map((l) => ({ slug: l.slug }));
+  } catch {
+    return [];
+  }
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const league = await getLeagueBySlug(slug, { publishedOnly: true });
+
+  if (!league) {
+    return { title: 'League Not Found | On The Snap' };
+  }
+
+  const description =
+    league.description ||
+    `${league.name} league at On The Snap. View standings, active season, and linked tournaments.`;
+
+  return {
+    title: `${league.name} | On The Snap Leagues`,
+    description,
+    openGraph: {
+      title: `${league.name} | On The Snap`,
+      description,
+      url: `https://onthesnap.ca/leagues/${slug}`,
+    },
+  };
+}
 
 export default async function LeagueDetailPage({
   params,
@@ -20,6 +58,18 @@ export default async function LeagueDetailPage({
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#070707' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            BreadcrumbJsonLd([
+              { name: 'Home', url: 'https://onthesnap.ca' },
+              { name: 'Leagues', url: 'https://onthesnap.ca/leagues' },
+              { name: league.name, url: `https://onthesnap.ca/leagues/${slug}` },
+            ])
+          ),
+        }}
+      />
       <Navbar />
 
       <Container maxWidth="lg" sx={{ pt: { xs: 14, md: 18 }, pb: 10 }}>

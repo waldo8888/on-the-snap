@@ -38,6 +38,8 @@ export interface Tournament {
   prize_notes: string | null;
   bracket_generated_at: string | null;
   total_rounds: number | null;
+  estimated_match_duration_minutes: number | null;
+  auto_assign_tables: boolean;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -197,6 +199,9 @@ export interface Match {
   next_match_slot: number | null;
   loser_next_match_id: string | null;
   loser_next_match_slot: number | null;
+  scheduled_at: string | null;
+  scheduled_at_manual: boolean;
+  estimated_duration_minutes: number | null;
   started_at: string | null;
   completed_at: string | null;
   notes: string | null;
@@ -270,6 +275,8 @@ export interface MatchUpdate {
   status?: MatchStatus;
   completed_at?: string | null;
   started_at?: string | null;
+  table_number?: number | null;
+  scheduled_at?: string | null;
 }
 
 // ============================================================

@@ -1657,6 +1657,17 @@ export async function applyMatchUpdates(updates: MatchUpdate[]) {
   if (error) throw error;
 }
 
+export async function getRounds(tournamentId: string): Promise<Round[]> {
+  const { data, error } = await insforge.database
+    .from('rounds')
+    .select('*')
+    .eq('tournament_id', tournamentId)
+    .order('round_number', { ascending: true });
+
+  if (error) throw error;
+  return (data as Round[]) || [];
+}
+
 export async function getMatches(tournamentId: string): Promise<Match[]> {
   const { data, error } = await insforge.database
     .from('matches')

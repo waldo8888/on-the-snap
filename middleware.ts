@@ -1,7 +1,11 @@
 import { InsforgeMiddleware } from '@insforge/nextjs/middleware';
 
+if (!process.env.NEXT_PUBLIC_INSFORGE_BASE_URL) {
+  throw new Error('NEXT_PUBLIC_INSFORGE_BASE_URL environment variable is required');
+}
+
 export default InsforgeMiddleware({
-  baseUrl: process.env.NEXT_PUBLIC_INSFORGE_BASE_URL || 'https://d5tkh9er.us-east.insforge.app',
+  baseUrl: process.env.NEXT_PUBLIC_INSFORGE_BASE_URL,
   publicRoutes: [
     '/',
     '/menu',
@@ -14,6 +18,7 @@ export default InsforgeMiddleware({
     '/scorekeeper/(.*)',
     '/admin/login',
     '/admin/verify-email',
+    '/admin/forgot-password',
   ],
 });
 

@@ -15,6 +15,8 @@ function sanitizeStation(station: ScorekeeperStation) {
 }
 
 function authAwareErrorResponse(message: string) {
+  console.error('[scorekeeper-stations] error:', message);
+
   if (/jwt expired|invalid jwt|authentication required/i.test(message)) {
     return NextResponse.json(
       { error: 'Admin session expired. Refresh the page or sign in again.' },
@@ -22,7 +24,10 @@ function authAwareErrorResponse(message: string) {
     );
   }
 
-  return NextResponse.json({ error: message }, { status: 400 });
+  return NextResponse.json(
+    { error: 'An error occurred while processing the request' },
+    { status: 400 }
+  );
 }
 
 export async function GET(request: NextRequest) {
@@ -100,7 +105,8 @@ export async function POST(request: NextRequest) {
     pinHash = hashScorekeeperPin(stationId, pin);
   } catch (error) {
     if (isScorekeeperConfigError(error)) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('[scorekeeper-stations] config error:', error.message);
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
     throw error;

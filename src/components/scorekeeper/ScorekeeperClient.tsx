@@ -531,11 +531,27 @@ export default function ScorekeeperClient({
             <Typography sx={{ color: '#a0a0a0' }}>No additional matches are queued for this table.</Typography>
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {readyQueue.map((match) => (
-                <Typography key={match.id} sx={{ color: '#d7d7d2' }}>
-                  Match #{match.match_number} · {match.player1?.name ?? 'TBD'} vs{' '}
-                  {match.player2?.name ?? 'TBD'}
-                </Typography>
+              {readyQueue.map((match, idx) => (
+                <Box key={match.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {idx === 0 && (
+                    <Box sx={{
+                      bgcolor: '#D4AF37', color: '#000', px: 1, py: 0.25,
+                      borderRadius: 1, fontSize: '0.65rem', fontWeight: 800,
+                      letterSpacing: 1, whiteSpace: 'nowrap',
+                    }}>
+                      ON DECK
+                    </Box>
+                  )}
+                  <Typography sx={{ color: '#d7d7d2', flex: 1 }}>
+                    Match #{match.match_number} · {match.player1?.name ?? 'TBD'} vs{' '}
+                    {match.player2?.name ?? 'TBD'}
+                  </Typography>
+                  {match.scheduled_at && (
+                    <Typography sx={{ color: '#D4AF37', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                      {new Date(match.scheduled_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                    </Typography>
+                  )}
+                </Box>
               ))}
             </Box>
           )}

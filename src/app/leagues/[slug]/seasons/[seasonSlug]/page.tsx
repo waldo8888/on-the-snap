@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -14,8 +15,36 @@ import {
 } from '@mui/material';
 import Navbar from '@/components/Navbar';
 import { getSeasonBySlug } from '@/lib/tournaments';
+import { BreadcrumbJsonLd } from '@/lib/json-ld';
 
 export const revalidate = 120;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string; seasonSlug: string }>;
+}): Promise<Metadata> {
+  const { slug, seasonSlug } = await params;
+  const season = await getSeasonBySlug(slug, seasonSlug, { publishedOnly: true });
+
+  if (!season || !season.league) {
+    return { title: 'Season Not Found | On The Snap' };
+  }
+
+  const description =
+    season.description ||
+    `${season.name} standings for ${season.league.name}. View rankings, points, and linked tournament results.`;
+
+  return {
+    title: `${season.name} — ${season.league.name} | On The Snap`,
+    description,
+    openGraph: {
+      title: `${season.name} — ${season.league.name} | On The Snap`,
+      description,
+      url: `https://onthesnap.ca/leagues/${slug}/seasons/${seasonSlug}`,
+    },
+  };
+}
 
 export default async function SeasonDetailPage({
   params,
@@ -31,6 +60,19 @@ export default async function SeasonDetailPage({
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#070707' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            BreadcrumbJsonLd([
+              { name: 'Home', url: 'https://onthesnap.ca' },
+              { name: 'Leagues', url: 'https://onthesnap.ca/leagues' },
+              { name: season.league.name, url: `https://onthesnap.ca/leagues/${slug}` },
+              { name: season.name, url: `https://onthesnap.ca/leagues/${slug}/seasons/${seasonSlug}` },
+            ])
+          ),
+        }}
+      />
       <Navbar />
 
       <Container maxWidth="lg" sx={{ pt: { xs: 14, md: 18 }, pb: 10 }}>

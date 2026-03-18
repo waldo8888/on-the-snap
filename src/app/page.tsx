@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+import { LocalBusinessJsonLd, BreadcrumbJsonLd } from '@/lib/json-ld';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Stats from '@/components/Stats';
@@ -20,6 +22,15 @@ import type {
   TournamentWithDetails,
   TournamentStatus,
 } from '@/lib/tournament-engine/types';
+
+export const metadata: Metadata = {
+  title: 'On The Snap | Premium Billiards & Lounge in Hamilton',
+  description:
+    "Hamilton's premier pool hall and lounge in Stoney Creek. 15 tournament-grade tables, darts, craft cocktails, live streaming, and competitive leagues. Reserve a table today.",
+  alternates: {
+    canonical: 'https://onthesnap.ca',
+  },
+};
 
 export const revalidate = 300; // re-fetch every 5 minutes
 
@@ -83,6 +94,20 @@ export default async function Home() {
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(LocalBusinessJsonLd()),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            BreadcrumbJsonLd([{ name: 'Home', url: 'https://onthesnap.ca' }])
+          ),
+        }}
+      />
       <Navbar />
       <Hero />
       <Stats />

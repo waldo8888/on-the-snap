@@ -35,11 +35,13 @@ async function getAuthorizedMatchContext(
     ]);
 
   if (stationError) {
-    return { error: stationError.message, status: 400 as const };
+    console.error('[scorekeeper-matches] station lookup failed:', stationError.message);
+    return { error: 'Unable to verify station', status: 400 as const };
   }
 
   if (matchError) {
-    return { error: matchError.message, status: 400 as const };
+    console.error('[scorekeeper-matches] match lookup failed:', matchError.message);
+    return { error: 'Unable to load match', status: 400 as const };
   }
 
   const station = (stationData as ScorekeeperStation | null) ?? null;
@@ -72,7 +74,8 @@ async function getAuthorizedMatchContext(
     .maybeSingle();
 
   if (tournamentError) {
-    return { error: tournamentError.message, status: 400 as const };
+    console.error('[scorekeeper-matches] tournament lookup failed:', tournamentError.message);
+    return { error: 'Unable to load tournament', status: 400 as const };
   }
 
   const tournament = (tournamentData as Tournament | null) ?? null;
@@ -173,8 +176,9 @@ export async function PATCH(
 
     return NextResponse.json({ error: 'Unsupported action' }, { status: 400 });
   } catch (error) {
+    console.error('[scorekeeper-matches] update failed:', error instanceof Error ? error.message : error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Match update failed' },
+      { error: 'Match update failed' },
       { status: 400 }
     );
   }

@@ -25,11 +25,14 @@ import {
   Alert,
   InputLabel,
   FormControl,
+  Collapse,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import {
   deleteTournament,
   canDeleteTournament,
@@ -52,6 +55,8 @@ import type {
   SeasonWithDetails,
 } from '@/lib/tournament-engine/types';
 import DateTimePickerField from '@/components/admin/DateTimePickerField';
+import TournamentStepper from '@/components/admin/TournamentStepper';
+import QuickCheckInPanel from '@/components/admin/QuickCheckInPanel';
 import { resolveTournamentAdminRouteId } from '@/lib/route-params';
 
 const FORMATS: { value: TournamentFormat; label: string }[] = [
@@ -175,6 +180,7 @@ export default function TournamentEditClient({ role }: TournamentEditClientProps
   const [activeTab, setActiveTab] = useState(0);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [seasonOptions, setSeasonOptions] = useState<SeasonWithDetails[]>([]);
+  const [settingsExpanded, setSettingsExpanded] = useState(true);
 
   const [form, setForm] = useState({
     title: '',
@@ -193,6 +199,8 @@ export default function TournamentEditClient({ role }: TournamentEditClientProps
     rules: '',
     prize_notes: '',
     published: false,
+    estimated_match_duration_minutes: '',
+    auto_assign_tables: true,
   });
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -229,6 +237,10 @@ export default function TournamentEditClient({ role }: TournamentEditClientProps
       }
       setSeasonOptions(seasons as SeasonWithDetails[]);
       setTournament(data);
+      // Auto-collapse settings during active phases — the admin needs operational UI, not settings
+      if (data.status === 'check_in' || data.status === 'live') {
+        setSettingsExpanded(false);
+      }
       setForm({
         title: data.title,
         description: data.description || '',
@@ -246,6 +258,8 @@ export default function TournamentEditClient({ role }: TournamentEditClientProps
         rules: data.rules || '',
         prize_notes: data.prize_notes || '',
         published: data.published,
+        estimated_match_duration_minutes: data.estimated_match_duration_minutes?.toString() || '',
+        auto_assign_tables: data.auto_assign_tables ?? true,
       });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load tournament');
@@ -328,6 +342,8 @@ export default function TournamentEditClient({ role }: TournamentEditClientProps
         rules: form.rules.trim() || null,
         prize_notes: form.prize_notes.trim() || null,
         published: form.published,
+        estimated_match_duration_minutes: form.estimated_match_duration_minutes ? Number(form.estimated_match_duration_minutes) : null,
+        auto_assign_tables: form.auto_assign_tables,
       });
 
       await refreshTournament(updated);
@@ -353,6 +369,10 @@ export default function TournamentEditClient({ role }: TournamentEditClientProps
 
       const updated = await updateTournament(tournament.id, { status: newStatus });
       await refreshTournament(updated);
+      // Collapse settings form when entering active phases
+      if (newStatus === 'check_in' || newStatus === 'live') {
+        setSettingsExpanded(false);
+      }
       setSuccess(
         newStatus === 'live' && !tournament.bracket_generated_at
           ? 'Bracket generated and tournament is now live'
@@ -457,7 +477,7 @@ export default function TournamentEditClient({ role }: TournamentEditClientProps
       return {
         severity: 'info' as const,
         title: 'Check-In is active',
-        description: 'Mark paid players checked in on the Participants tab. Only checked-in players will be used when the bracket is generated.',
+        description: 'Use the check-in panel below to confirm players as they arrive. Only checked-in players will be seeded in the bracket.',
       };
     }
 
@@ -720,6 +740,29 @@ export default function TournamentEditClient({ role }: TournamentEditClientProps
         </Alert>
       )}
 
+      {/* Tab Navigation — placed prominently below heading */}
+      <Tabs
+        value={activeTab}
+        onChange={handleTabChange}
+        sx={{
+          mb: 3,
+          borderBottom: '1px solid rgba(212,175,55,0.12)',
+          '& .MuiTab-root': {
+            textTransform: 'none',
+            color: 'text.secondary',
+            fontWeight: 500,
+            fontSize: '0.85rem',
+            minHeight: 48,
+            '&.Mui-selected': { color: '#D4AF37' },
+          },
+          '& .MuiTabs-indicator': { bgcolor: '#D4AF37' },
+        }}
+      >
+        {DETAIL_TABS.map((tab) => (
+          <Tab key={tab.label} label={tab.label} />
+        ))}
+      </Tabs>
+
       <Paper
         elevation={0}
         sx={{
@@ -765,7 +808,41 @@ export default function TournamentEditClient({ role }: TournamentEditClientProps
         </Box>
       </Paper>
 
-      {/* Tab Navigation */}
+      {/* Tournament Progress Stepper */}
+      <TournamentStepper
+        tournament={tournament}
+        onStatusChange={handleStatusAction}
+        onGenerateBracket={async () => {
+          try {
+            setSaving(true);
+            setError(null);
+            await generateAndSaveTournamentBracket(tournament.id);
+            await refreshTournament();
+            setSuccess('Bracket generated successfully');
+            setTimeout(() => setSuccess(null), 3000);
+          } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to generate bracket');
+          } finally {
+            setSaving(false);
+          }
+        }}
+        loading={saving}
+      />
+
+      {/* Quick Check-In Panel — surfaces inline during check-in phase */}
+      {tournament.status === 'check_in' && (
+        <QuickCheckInPanel
+          tournamentId={tournament.id}
+          participants={participants}
+          onParticipantsChange={(updated) => {
+            setTournament((prev) => prev ? { ...prev, participants: updated } : prev);
+          }}
+          onRefresh={() => refreshTournament()}
+          tournamentAdminPath={`/admin/tournaments/${id}`}
+        />
+      )}
+
+      {/* Details Form */}
       <Paper
         elevation={0}
         sx={{
@@ -777,29 +854,25 @@ export default function TournamentEditClient({ role }: TournamentEditClientProps
           overflow: 'hidden',
         }}
       >
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          sx={{
-            borderBottom: '1px solid rgba(212,175,55,0.08)',
-            '& .MuiTab-root': {
-              textTransform: 'none',
-              color: 'text.secondary',
-              fontWeight: 500,
-              fontSize: '0.85rem',
-              minHeight: 48,
-              '&.Mui-selected': { color: '#D4AF37' },
-            },
-            '& .MuiTabs-indicator': { bgcolor: '#D4AF37' },
-          }}
-        >
-          {DETAIL_TABS.map((tab) => (
-            <Tab key={tab.label} label={tab.label} />
-          ))}
-        </Tabs>
-
-        {/* Details Form */}
         <Box sx={{ p: 3 }}>
+          {/* Collapsible toggle for active phases */}
+          {(tournament.status === 'check_in' || tournament.status === 'live') && (
+            <Button
+              onClick={() => setSettingsExpanded((prev) => !prev)}
+              endIcon={settingsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              sx={{
+                color: '#888',
+                textTransform: 'none',
+                fontSize: '0.82rem',
+                mb: settingsExpanded ? 2 : 0,
+                px: 0,
+                '&:hover': { color: '#D4AF37', bgcolor: 'transparent' },
+              }}
+            >
+              {settingsExpanded ? 'Hide Tournament Settings' : 'Show Tournament Settings'}
+            </Button>
+          )}
+          <Collapse in={settingsExpanded || (tournament.status !== 'check_in' && tournament.status !== 'live')}>
           <Grid container spacing={3}>
             {/* Title */}
             <Grid size={{ xs: 12 }}>
@@ -959,6 +1032,40 @@ export default function TournamentEditClient({ role }: TournamentEditClientProps
               />
             </Grid>
 
+            {/* Estimated Match Duration */}
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                label="Est. Match Duration (min)"
+                value={form.estimated_match_duration_minutes}
+                onChange={(e) => updateField('estimated_match_duration_minutes', e.target.value)}
+                fullWidth
+                size="small"
+                type="number"
+                placeholder="Auto"
+                helperText="Leave blank to auto-estimate from race-to"
+                inputProps={{ min: 5, max: 300 }}
+                sx={goldInputSx}
+              />
+            </Grid>
+
+            {/* Auto-assign Tables */}
+            <Grid size={{ xs: 12, md: 4 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.auto_assign_tables}
+                    onChange={(e) => updateField('auto_assign_tables', e.target.checked)}
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': { color: '#D4AF37' },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#D4AF37' },
+                    }}
+                  />
+                }
+                label="Auto-assign Tables"
+                sx={{ color: '#f5f5f0' }}
+              />
+            </Grid>
+
             {/* Published */}
             <Grid size={{ xs: 12, md: 4 }}>
               <FormControlLabel
@@ -1038,9 +1145,10 @@ export default function TournamentEditClient({ role }: TournamentEditClientProps
               />
             </Grid>
           </Grid>
+          </Collapse>
 
           {/* Actions */}
-          <Box sx={{ display: 'flex', gap: 2, mt: 4, pt: 3, borderTop: '1px solid rgba(212,175,55,0.1)' }}>
+          <Box sx={{ display: 'flex', gap: 2, mt: settingsExpanded || (tournament.status !== 'check_in' && tournament.status !== 'live') ? 4 : 2, pt: 3, borderTop: '1px solid rgba(212,175,55,0.1)' }}>
             <Button
               variant="contained"
               startIcon={saving ? <CircularProgress size={18} sx={{ color: '#050505' }} /> : <SaveIcon />}

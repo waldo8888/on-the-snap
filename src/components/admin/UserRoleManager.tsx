@@ -29,6 +29,7 @@ import {
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import type { UserRole, AdminUserRecord } from '@/lib/admin-users';
 import { assignUserRole, listRoleAssignableUsers } from '@/lib/admin-users';
+import { getPasswordErrors, isPasswordValid } from '@/lib/password-validation';
 
 const ROLE_OPTIONS: UserRole[] = ['user', 'staff', 'owner'];
 
@@ -110,8 +111,11 @@ export default function UserRoleManager({ currentUserId }: UserRoleManagerProps)
       }
     };
 
+  const newPasswordErrors = newPassword ? getPasswordErrors(newPassword) : [];
+  const newPasswordIsValid = newPassword ? isPasswordValid(newPassword) : false;
+
   const handleCreateAccount = async () => {
-    if (!newEmail.trim() || !newPassword) return;
+    if (!newEmail.trim() || !newPassword || !newPasswordIsValid) return;
 
     setCreateError(null);
     setCreateLoading(true);
@@ -442,8 +446,13 @@ export default function UserRoleManager({ currentUserId }: UserRoleManagerProps)
             onChange={(e) => setNewPassword(e.target.value)}
             required
             sx={{ mb: 2 }}
-            helperText="Share this with the employee so they can sign in."
             autoComplete="off"
+            error={newPassword.length > 0 && !newPasswordIsValid}
+            helperText={
+              newPassword.length > 0 && newPasswordErrors.length > 0
+                ? `Missing: ${newPasswordErrors.join(', ').toLowerCase()}`
+                : 'Min 8 chars, uppercase, lowercase, number. Share with the employee.'
+            }
           />
           <FormControl fullWidth size="small">
             <Select<UserRole>
@@ -482,7 +491,7 @@ export default function UserRoleManager({ currentUserId }: UserRoleManagerProps)
           <Button
             variant="contained"
             onClick={handleCreateAccount}
-            disabled={createLoading || !newEmail.trim() || !newPassword}
+            disabled={createLoading || !newEmail.trim() || !newPasswordIsValid}
             sx={{ textTransform: 'none' }}
           >
             {createLoading ? (
