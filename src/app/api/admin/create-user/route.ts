@@ -1,14 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@insforge/nextjs/server';
 import { createClient } from '@insforge/sdk';
+import { checkRateLimit } from '@/lib/rate-limit';
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_INSFORGE_BASE_URL ||
-  'https://d5tkh9er.us-east.insforge.app';
+const BASE_URL = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
 const ANON_KEY = process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY || '';
 
 export async function POST(request: NextRequest) {
+  const rateLimited = checkRateLimit(request, {
+    prefix: 'create-user',
+    maxRequests: 10,
+    windowMs: 60 * 60 * 1000, // 10 per hour
+  });
+  if (rateLimited) return rateLimited;
+
   try {
+    if (!BASE_URL) {
+      console.error('[create-user] NEXT_PUBLIC_INSFORGE_BASE_URL is not set');
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
     /* ── 1. Verify the caller is an authenticated owner ────────────── */
     const { userId, token } = await auth();
     if (!userId || !token) {
@@ -72,8 +85,9 @@ export async function POST(request: NextRequest) {
       });
 
     if (signupError) {
+      console.error('[create-user] signup failed:', signupError.message);
       return NextResponse.json(
-        { error: signupError.message || 'Failed to create account' },
+        { error: 'Failed to create account' },
         { status: 400 }
       );
     }
@@ -97,11 +111,9 @@ export async function POST(request: NextRequest) {
       });
 
     if (assignError) {
+      console.error('[create-user] role assignment failed:', assignError.message);
       return NextResponse.json(
-        {
-          error: `Account created but role assignment failed: ${assignError.message}`,
-          userId: newUserId,
-        },
+        { error: 'Account created but role assignment failed. Try assigning the role manually.' },
         { status: 207 }
       );
     }

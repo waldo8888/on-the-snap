@@ -158,6 +158,16 @@ export default function AdminLoginPage() {
           Staff access only. Contact the owner for credentials.
         </Typography>
         <Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary' }}>
+          Forgot your password?{' '}
+          <Typography
+            component={Link}
+            href="/admin/forgot-password"
+            sx={{ color: 'primary.main', textDecoration: 'none' }}
+          >
+            Reset it
+          </Typography>
+        </Typography>
+        <Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary' }}>
           Have a verification code?{' '}
           <Typography
             component={Link}

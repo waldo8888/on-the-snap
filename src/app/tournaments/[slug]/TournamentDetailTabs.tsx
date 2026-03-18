@@ -291,7 +291,6 @@ function BracketPanel({ tournament }: Props) {
           </Box>
 
           <Button
-            component={Link}
             href={`/tournaments/${tournament.slug}/bracket`}
             target="_blank"
             rel="noreferrer"
@@ -433,7 +432,6 @@ function BracketPanel({ tournament }: Props) {
           )}
 
           <Button
-            component={Link}
             href={`/tournaments/${tournament.slug}/bracket`}
             target="_blank"
             rel="noreferrer"
@@ -791,21 +789,36 @@ function PlayersPanel({ tournament }: Props) {
           >
             {p.seed || i + 1}
           </Typography>
-          <Typography
-            component={p.player_id ? Link : 'span'}
-            href={p.player_id ? `/players/${p.player_id}` : undefined}
-            sx={{
-              fontFamily: '"Inter", sans-serif',
-              fontSize: '0.9rem',
-              color: '#f5f5f0',
-              fontWeight: 500,
-              flex: 1,
-              textDecoration: 'none',
-              '&:hover': p.player_id ? { color: '#D4AF37' } : undefined,
-            }}
-          >
-            {p.name}
-          </Typography>
+          {p.player_id ? (
+            <Link
+              href={`/players/${p.player_id}`}
+              style={{ textDecoration: 'none', flex: 1 }}
+            >
+              <Typography
+                sx={{
+                  fontFamily: '"Inter", sans-serif',
+                  fontSize: '0.9rem',
+                  color: '#f5f5f0',
+                  fontWeight: 500,
+                  '&:hover': { color: '#D4AF37' },
+                }}
+              >
+                {p.name}
+              </Typography>
+            </Link>
+          ) : (
+            <Typography
+              sx={{
+                fontFamily: '"Inter", sans-serif',
+                fontSize: '0.9rem',
+                color: '#f5f5f0',
+                fontWeight: 500,
+                flex: 1,
+              }}
+            >
+              {p.name}
+            </Typography>
+          )}
           {p.handicap > 0 && (
             <Chip
               label={`HC ${p.handicap}`}
@@ -1046,21 +1059,34 @@ function ResultsPanel({ tournament }: Props) {
                   >
                     {medal.title}
                   </Typography>
-                  <Typography
-                    component={entry.participant.player_id ? Link : 'span'}
-                    href={entry.participant.player_id ? `/players/${entry.participant.player_id}` : undefined}
-                    sx={{
-                      fontFamily: '"Playfair Display", serif',
-                      fontSize: { xs: '1.15rem', md: '1.3rem' },
-                      color: '#f5f5f0',
-                      fontWeight: 700,
-                      lineHeight: 1.2,
-                      textDecoration: 'none',
-                      '&:hover': entry.participant.player_id ? { color: '#D4AF37' } : undefined,
-                    }}
-                  >
-                    {entry.participant.name}
-                  </Typography>
+                  {entry.participant.player_id ? (
+                    <Link href={`/players/${entry.participant.player_id}`} style={{ textDecoration: 'none' }}>
+                      <Typography
+                        sx={{
+                          fontFamily: '"Playfair Display", serif',
+                          fontSize: { xs: '1.15rem', md: '1.3rem' },
+                          color: '#f5f5f0',
+                          fontWeight: 700,
+                          lineHeight: 1.2,
+                          '&:hover': { color: '#D4AF37' },
+                        }}
+                      >
+                        {entry.participant.name}
+                      </Typography>
+                    </Link>
+                  ) : (
+                    <Typography
+                      sx={{
+                        fontFamily: '"Playfair Display", serif',
+                        fontSize: { xs: '1.15rem', md: '1.3rem' },
+                        color: '#f5f5f0',
+                        fontWeight: 700,
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {entry.participant.name}
+                    </Typography>
+                  )}
                   {resultLabel && (
                     <Typography
                       sx={{
@@ -1129,21 +1155,33 @@ function ResultsPanel({ tournament }: Props) {
               >
                 {formatOrdinal(entry.place)}
               </Typography>
-              <Typography
-                component={entry.participant.player_id ? Link : 'span'}
-                href={entry.participant.player_id ? `/players/${entry.participant.player_id}` : undefined}
-                sx={{
-                  fontFamily: '"Inter", sans-serif',
-                  fontSize: '0.92rem',
-                  color: '#f5f5f0',
-                  fontWeight: 500,
-                  flex: 1,
-                  textDecoration: 'none',
-                  '&:hover': entry.participant.player_id ? { color: '#D4AF37' } : undefined,
-                }}
-              >
-                {entry.participant.name}
-              </Typography>
+              {entry.participant.player_id ? (
+                <Link href={`/players/${entry.participant.player_id}`} style={{ textDecoration: 'none', flex: 1 }}>
+                  <Typography
+                    sx={{
+                      fontFamily: '"Inter", sans-serif',
+                      fontSize: '0.92rem',
+                      color: '#f5f5f0',
+                      fontWeight: 500,
+                      '&:hover': { color: '#D4AF37' },
+                    }}
+                  >
+                    {entry.participant.name}
+                  </Typography>
+                </Link>
+              ) : (
+                <Typography
+                  sx={{
+                    fontFamily: '"Inter", sans-serif',
+                    fontSize: '0.92rem',
+                    color: '#f5f5f0',
+                    fontWeight: 500,
+                    flex: 1,
+                  }}
+                >
+                  {entry.participant.name}
+                </Typography>
+              )}
               {recentResultMap.get(entry.participant.id) && (
                 <Typography
                   sx={{

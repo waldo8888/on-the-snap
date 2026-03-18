@@ -15,6 +15,7 @@ import {
   Checkbox,
   IconButton,
   Tooltip,
+  Menu,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -30,6 +31,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import {
   getTournaments,
   deleteTournament,
@@ -107,6 +109,8 @@ export default function TournamentListClient({ role }: TournamentListClientProps
 
   // Inline delete state
   const [inlineDeleteTarget, setInlineDeleteTarget] = useState<Tournament | null>(null);
+  const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(null);
+  const [mobileMenuTarget, setMobileMenuTarget] = useState<Tournament | null>(null);
   const [inlineDeleting, setInlineDeleting] = useState(false);
 
   // Bulk delete state
@@ -610,8 +614,8 @@ export default function TournamentListClient({ role }: TournamentListClientProps
                     {tournament.game_type}
                   </Typography>
 
-                  {/* Status Chip */}
-                  <Box sx={{ mt: { xs: 1, md: 0 } }}>
+                  {/* Status Chip + Mobile Menu */}
+                  <Box sx={{ mt: { xs: 1, md: 0 }, display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Chip
                       label={tournament.status}
                       size="small"
@@ -625,6 +629,22 @@ export default function TournamentListClient({ role }: TournamentListClientProps
                         border: 'none',
                       }}
                     />
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMobileMenuAnchor(e.currentTarget);
+                        setMobileMenuTarget(tournament);
+                      }}
+                      sx={{
+                        display: { xs: 'flex', md: 'none' },
+                        ml: 'auto',
+                        color: 'text.secondary',
+                        '&:hover': { color: '#D4AF37' },
+                      }}
+                    >
+                      <MoreVertIcon fontSize="small" />
+                    </IconButton>
                   </Box>
 
                   {/* Date */}
@@ -682,6 +702,47 @@ export default function TournamentListClient({ role }: TournamentListClientProps
           </Box>
         )}
       </Paper>
+
+      {/* Mobile overflow menu */}
+      <Menu
+        anchorEl={mobileMenuAnchor}
+        open={!!mobileMenuAnchor}
+        onClose={() => { setMobileMenuAnchor(null); setMobileMenuTarget(null); }}
+        slotProps={{
+          paper: {
+            sx: {
+              bgcolor: '#141414',
+              border: '1px solid rgba(212,175,55,0.12)',
+              minWidth: 160,
+            },
+          },
+        }}
+      >
+        <MenuItem
+          onClick={() => {
+            if (mobileMenuTarget) void handleClone(mobileMenuTarget);
+            setMobileMenuAnchor(null);
+            setMobileMenuTarget(null);
+          }}
+          sx={{ color: '#f5f5f0', fontSize: '0.85rem', gap: 1.5 }}
+        >
+          <ContentCopyIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+          Duplicate
+        </MenuItem>
+        {mobileMenuTarget && canDeleteTournament(mobileMenuTarget.status, role) && (
+          <MenuItem
+            onClick={() => {
+              setInlineDeleteTarget(mobileMenuTarget);
+              setMobileMenuAnchor(null);
+              setMobileMenuTarget(null);
+            }}
+            sx={{ color: '#ef5350', fontSize: '0.85rem', gap: 1.5 }}
+          >
+            <DeleteIcon fontSize="small" />
+            Delete
+          </MenuItem>
+        )}
+      </Menu>
 
       {/* Inline Delete Confirmation Dialog */}
       <Dialog

@@ -3,6 +3,9 @@ import { insforge } from './insforge';
 import {
   applyMatchUpdates,
   getMatches,
+  getRounds,
+  getScorekeeperStations,
+  getTournamentById,
   updateMatch,
 } from './tournaments';
 import {
@@ -10,6 +13,7 @@ import {
   canCorrectMatch,
   revertMatch,
 } from './tournament-engine/advancement';
+import { computeAutoAssignments } from './table-assignment';
 
 export function parseScoreInput(value?: string) {
   if (!value || value.trim() === '') {
@@ -107,6 +111,34 @@ export async function finalizeMatchResult(options: {
   );
 
   await applyMatchUpdates(updates);
+
+  // Auto-assign freed tables to next ready matches
+  await autoAssignTablesAfterFinalize(options.tournamentId);
+}
+
+/**
+ * After a match is finalized, check if the tournament has auto_assign_tables enabled
+ * and assign any freed tables to the next ready matches in the queue.
+ */
+async function autoAssignTablesAfterFinalize(tournamentId: string) {
+  try {
+    const tournament = await getTournamentById(tournamentId);
+    if (!tournament?.auto_assign_tables) return;
+
+    const [matches, rounds, stations] = await Promise.all([
+      getMatches(tournamentId),
+      getRounds(tournamentId),
+      getScorekeeperStations(tournamentId),
+    ]);
+
+    const assignments = computeAutoAssignments(matches, rounds, stations);
+    if (assignments.length > 0) {
+      await applyMatchUpdates(assignments);
+    }
+  } catch {
+    // Auto-assignment is best-effort - don't fail the finalization
+    console.error('Auto table assignment failed (non-blocking)');
+  }
 }
 
 async function getMatchesForMatchId(matchId: string) {

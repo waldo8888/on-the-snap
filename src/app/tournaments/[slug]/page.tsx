@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { Box, Container, Typography, Chip, Button, Paper, Divider, Grid } from '@mui/material';
 import Navbar from '@/components/Navbar';
 import { getTournamentBySlug, getTournaments } from '@/lib/tournaments';
+import { SportsEventJsonLd, BreadcrumbJsonLd } from '@/lib/json-ld';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import GroupIcon from '@mui/icons-material/Group';
@@ -137,6 +138,24 @@ export default async function TournamentDetailPage({
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#070707' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(SportsEventJsonLd(rawTournament)),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            BreadcrumbJsonLd([
+              { name: 'Home', url: 'https://onthesnap.ca' },
+              { name: 'Tournaments', url: 'https://onthesnap.ca/tournaments' },
+              { name: rawTournament.title, url: `https://onthesnap.ca/tournaments/${slug}` },
+            ])
+          ),
+        }}
+      />
       <Navbar />
 
       <Container maxWidth="lg" sx={{ pt: { xs: 12, md: 16 }, pb: 10 }}>

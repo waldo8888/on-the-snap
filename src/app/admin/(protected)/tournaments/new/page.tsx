@@ -70,6 +70,8 @@ export default function NewTournamentPage() {
     rules: '',
     prize_notes: '',
     published: false,
+    estimated_match_duration_minutes: '',
+    auto_assign_tables: true,
   });
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -124,6 +126,8 @@ export default function NewTournamentPage() {
         published: form.published,
         rules: form.rules.trim() || null,
         prize_notes: form.prize_notes.trim() || null,
+        estimated_match_duration_minutes: form.estimated_match_duration_minutes ? Number(form.estimated_match_duration_minutes) : null,
+        auto_assign_tables: form.auto_assign_tables,
         created_by: user?.id || null,
       });
 
@@ -308,6 +312,40 @@ export default function NewTournamentPage() {
                 />
               }
               label="Check-in Required"
+              sx={{ color: '#f5f5f0' }}
+            />
+          </Grid>
+
+          {/* Estimated Match Duration */}
+          <Grid size={{ xs: 12, md: 4 }}>
+            <TextField
+              label="Est. Match Duration (min)"
+              value={form.estimated_match_duration_minutes}
+              onChange={(e) => updateField('estimated_match_duration_minutes', e.target.value)}
+              fullWidth
+              size="small"
+              type="number"
+              placeholder="Auto"
+              helperText="Leave blank to auto-estimate"
+              inputProps={{ min: 5, max: 300 }}
+              sx={goldInputSx}
+            />
+          </Grid>
+
+          {/* Auto-assign Tables */}
+          <Grid size={{ xs: 12, md: 4 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={form.auto_assign_tables}
+                  onChange={(e) => updateField('auto_assign_tables', e.target.checked)}
+                  sx={{
+                    '& .MuiSwitch-switchBase.Mui-checked': { color: '#D4AF37' },
+                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#D4AF37' },
+                  }}
+                />
+              }
+              label="Auto-assign Tables"
               sx={{ color: '#f5f5f0' }}
             />
           </Grid>

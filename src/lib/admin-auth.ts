@@ -42,10 +42,13 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   }
 
   try {
+    const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
+    if (!baseUrl) {
+      return null;
+    }
+
     const serverClient = createClient({
-      baseUrl:
-        process.env.NEXT_PUBLIC_INSFORGE_BASE_URL ||
-        'https://d5tkh9er.us-east.insforge.app',
+      baseUrl,
       anonKey: process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY || '',
       edgeFunctionToken: token,
     });

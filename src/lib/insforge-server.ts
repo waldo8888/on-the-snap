@@ -3,10 +3,12 @@ import 'server-only';
 import { auth } from '@insforge/nextjs/server';
 import { createClient } from '@insforge/sdk';
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_INSFORGE_BASE_URL ||
-  'https://d5tkh9er.us-east.insforge.app';
+const BASE_URL = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
 const ANON_KEY = process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY || '';
+
+if (!BASE_URL) {
+  throw new Error('NEXT_PUBLIC_INSFORGE_BASE_URL environment variable is required');
+}
 
 export function createServerInsforgeClient(edgeFunctionToken?: string) {
   return createClient({

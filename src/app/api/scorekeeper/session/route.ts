@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { insforge } from '@/lib/insforge';
+import { checkRateLimit } from '@/lib/rate-limit';
 import {
   createScorekeeperSessionValue,
   getScorekeeperSessionCookieOptions,
@@ -10,6 +11,12 @@ import {
 import type { ScorekeeperStation } from '@/lib/tournament-engine/types';
 
 export async function POST(request: NextRequest) {
+  const rateLimited = checkRateLimit(request, {
+    prefix: 'scorekeeper-session',
+    maxRequests: 5,
+    windowMs: 60 * 1000, // 5 attempts per minute
+  });
+  if (rateLimited) return rateLimited;
   const body = (await request.json()) as {
     stationId?: string;
     pin?: string;
@@ -29,7 +36,8 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    console.error('[scorekeeper-session] lookup failed:', error.message);
+    return NextResponse.json({ error: 'Unable to verify station' }, { status: 400 });
   }
 
   const station = (data as ScorekeeperStation | null) ?? null;
@@ -55,7 +63,8 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     if (isScorekeeperConfigError(error)) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('[scorekeeper-session] config error:', error.message);
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
     throw error;

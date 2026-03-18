@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
@@ -18,6 +18,12 @@ const playfair = Playfair_Display({
   variable: '--font-playfair',
   display: 'swap',
 });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#D4AF37',
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://onthesnap.ca'),
