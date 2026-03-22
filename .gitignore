@@ -48,6 +48,7 @@ next-env.d.ts
 .claude
 .cline
 .github/copilot*
+.vscode/mcp.json
 .kilocode
 .qoder
 .qwen

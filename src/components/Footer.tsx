@@ -341,7 +341,7 @@ export default function Footer() {
                         <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem' }}>
                             &copy; {new Date().getFullYear()} On The Snap Billiards &amp; Lounge. All rights reserved.
                         </Typography>
-                        <Box sx={{ display: 'flex', gap: 4 }}>
+                        <Box sx={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                             {[
                                 { label: 'Menu', href: '/menu' },
                             ].map(({ label, href }) => (
@@ -362,6 +362,9 @@ export default function Footer() {
                                     {label}
                                 </Typography>
                             ))}
+                            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', ml: 3 }}>
+                                Made with <span style={{color:'#D4AF37',fontWeight:600}}>❤️</span> Zaila AI Designs
+                            </Typography>
                         </Box>
                     </Box>
                 </Container>

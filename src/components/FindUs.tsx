@@ -6,6 +6,9 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import TableBarIcon from '@mui/icons-material/TableBar';
+import dynamic from 'next/dynamic';
+
+const LeafletMap = dynamic(() => import('./LeafletMap'), { ssr: false });
 
 const HOURS = [
     { day: 'Tuesday – Friday', hours: '4:00 PM – 2:00 AM' },
@@ -97,16 +100,7 @@ export default function FindUs() {
                                     },
                                 }}
                             >
-                                <iframe
-                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2910.5!2d-79.7174!3d43.2185!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s!2s152+Gray+Rd,+Stoney+Creek,+ON+L8G+3V2!5e0!3m2!1sen!2sca"
-                                    width="100%"
-                                    height="100%"
-                                    style={{ border: 0, filter: 'invert(0.85) hue-rotate(180deg) saturate(0.3) brightness(1.2)' }}
-                                    allowFullScreen
-                                    loading="lazy"
-                                    referrerPolicy="no-referrer-when-downgrade"
-                                    title="On The Snap location map"
-                                />
+                                <LeafletMap />
                             </Box>
                         </motion.div>
                     </Grid>
