@@ -1,8 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 export default function CustomCursor() {
+    const pathname = usePathname();
+    const isAdmin = pathname.startsWith('/admin');
+
     const dotRef = useRef<HTMLDivElement>(null);
     const ringWrapRef = useRef<HTMLDivElement>(null);
     const mousePos = useRef({ x: -200, y: -200 });
@@ -14,6 +18,15 @@ export default function CustomCursor() {
     const [visible, setVisible] = useState(false);
 
     useEffect(() => {
+        if (isAdmin) {
+            document.documentElement.setAttribute('data-admin', '');
+        } else {
+            document.documentElement.removeAttribute('data-admin');
+        }
+    }, [isAdmin]);
+
+    useEffect(() => {
+        if (isAdmin) return;
         // Only activate on mouse/trackpad devices — skip touch
         if (window.matchMedia('(pointer: coarse)').matches) return;
 
@@ -74,7 +87,9 @@ export default function CustomCursor() {
             document.removeEventListener('mouseleave', onDocLeave);
             document.removeEventListener('mouseenter', onDocEnter);
         };
-    }, []);
+    }, [isAdmin]);
+
+    if (isAdmin) return null;
 
     return (
         <>

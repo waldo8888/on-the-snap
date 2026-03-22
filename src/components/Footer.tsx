@@ -363,7 +363,7 @@ export default function Footer() {
                                 </Typography>
                             ))}
                             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', ml: 3 }}>
-                                Made with <span style={{color:'#D4AF37',fontWeight:600}}>❤️</span> Zaila AI Designs
+                                Made with <span style={{color:'#D4AF37',fontWeight:600}}>❤️</span> <a href="https://zailaai.com" target="_blank" rel="noopener noreferrer" style={{color:'inherit',textDecoration:'none'}}>Zaila AI Designs</a>
                             </Typography>
                         </Box>
                     </Box>

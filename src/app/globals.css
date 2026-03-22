@@ -26,7 +26,7 @@ html {
 
 /* Hide default cursor on pointer devices — custom cursor handles it */
 @media (pointer: fine) {
-  *, *::before, *::after {
+  html:not([data-admin]) *, html:not([data-admin]) *::before, html:not([data-admin]) *::after {
     cursor: none !important;
   }
 }
