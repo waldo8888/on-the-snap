@@ -129,6 +129,7 @@ export default function Hero() {
                         alt="Luxurious pool hall at On The Snap"
                         fill
                         priority
+                        sizes="100vw"
                         style={{
                             objectFit: 'cover',
                             filter: 'brightness(0.42) contrast(1.15) saturate(1.05)',
@@ -166,6 +167,7 @@ export default function Hero() {
                                     src="/images/onthesnap_logo.png"
                                     alt="On The Snap Logo"
                                     fill
+                                    sizes="(max-width: 600px) 220px, (max-width: 900px) 280px, 340px"
                                     style={{
                                         objectFit: 'contain',
                                         filter: 'drop-shadow(0 0 40px rgba(212,175,55,0.6)) drop-shadow(0 0 80px rgba(212,175,55,0.3))',

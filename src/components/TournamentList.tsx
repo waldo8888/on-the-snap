@@ -11,11 +11,21 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CancelIcon from '@mui/icons-material/Cancel';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import type {
   TournamentStatus,
   TournamentWithDetails,
 } from '@/lib/tournament-engine/types';
-import TournamentBracket from './TournamentBracket';
+
+const TournamentBracket = dynamic(() => import('./TournamentBracket'), {
+  loading: () => (
+    <Box sx={{ py: 4, textAlign: 'center' }}>
+      <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>
+        Loading bracket...
+      </Typography>
+    </Box>
+  ),
+});
 
 interface TournamentListProps {
   tournaments: TournamentWithDetails[];
@@ -325,6 +335,7 @@ export default function TournamentList({ tournaments = [] }: TournamentListProps
                       <Button
                         component={Link}
                         href={`/tournaments/${tournament.slug}`}
+                        prefetch={false}
                         variant="text"
                         sx={{
                           color: 'text.secondary',

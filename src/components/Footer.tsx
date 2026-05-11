@@ -114,6 +114,7 @@ export default function Footer() {
                                         src="/images/onthesnap_logo.png"
                                         alt="On The Snap"
                                         fill
+                                        sizes="52px"
                                         style={{ objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(212,175,55,0.4))' }}
                                     />
                                 </Box>

@@ -155,6 +155,7 @@ export default function Leagues({ tournaments = [], leagues = [], topPlayers = [
                                 <Button
                                     component={Link}
                                     href="/leaderboard"
+                                    prefetch={false}
                                     variant="contained"
                                     sx={{
                                         bgcolor: '#D4AF37',
@@ -170,6 +171,7 @@ export default function Leagues({ tournaments = [], leagues = [], topPlayers = [
                                 <Button
                                     component={Link}
                                     href="/leagues"
+                                    prefetch={false}
                                     variant="outlined"
                                     sx={{
                                         borderColor: 'rgba(212,175,55,0.35)',
@@ -207,6 +209,7 @@ export default function Leagues({ tournaments = [], leagues = [], topPlayers = [
                                     <Button
                                         component={Link}
                                         href={`/leaderboard?q=${encodeURIComponent(profileTeaser.display_name)}`}
+                                        prefetch={false}
                                         size="small"
                                         sx={{ color: '#D4AF37', textTransform: 'none', fontWeight: 700, px: 0 }}
                                     >
@@ -229,6 +232,7 @@ export default function Leagues({ tournaments = [], leagues = [], topPlayers = [
                                         <Chip
                                             component={Link}
                                             href={`/leagues/${league.slug}`}
+                                            prefetch={false}
                                             icon={<GradeIcon sx={{ fontSize: '14px !important', color: 'rgba(212,175,55,0.6) !important' }} />}
                                             clickable
                                             label={league.activeSeason ? `${league.name} · ${league.activeSeason.name}` : league.name}
@@ -403,6 +407,7 @@ export default function Leagues({ tournaments = [], leagues = [], topPlayers = [
                     <Button
                         component={Link}
                         href="/tournaments"
+                        prefetch={false}
                         variant="outlined"
                         endIcon={<ArrowForwardIcon />}
                         sx={{

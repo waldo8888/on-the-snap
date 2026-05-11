@@ -7,6 +7,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import TableBarIcon from '@mui/icons-material/TableBar';
 import dynamic from 'next/dynamic';
+import { useEffect, useRef, useState } from 'react';
 
 const LeafletMap = dynamic(() => import('./LeafletMap'), { ssr: false });
 
@@ -17,6 +18,32 @@ const HOURS = [
 ];
 
 export default function FindUs() {
+    const mapShellRef = useRef<HTMLDivElement>(null);
+    const [shouldLoadMap, setShouldLoadMap] = useState(false);
+
+    useEffect(() => {
+        const target = mapShellRef.current;
+        if (!target || shouldLoadMap) return;
+
+        if (typeof IntersectionObserver === 'undefined') {
+            const frame = window.requestAnimationFrame(() => setShouldLoadMap(true));
+            return () => window.cancelAnimationFrame(frame);
+        }
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setShouldLoadMap(true);
+                    observer.disconnect();
+                }
+            },
+            { rootMargin: '700px 0px' }
+        );
+
+        observer.observe(target);
+        return () => observer.disconnect();
+    }, [shouldLoadMap]);
+
     return (
         <Box
             id="find-us"
@@ -84,6 +111,7 @@ export default function FindUs() {
                             style={{ height: '100%' }}
                         >
                             <Box
+                                ref={mapShellRef}
                                 sx={{
                                     width: '100%',
                                     height: { xs: 320, md: 460 },
@@ -100,7 +128,19 @@ export default function FindUs() {
                                     },
                                 }}
                             >
-                                <LeafletMap />
+                                {shouldLoadMap ? (
+                                    <LeafletMap />
+                                ) : (
+                                    <Box
+                                        aria-hidden="true"
+                                        sx={{
+                                            width: '100%',
+                                            height: '100%',
+                                            background:
+                                                'radial-gradient(circle at 50% 45%, rgba(212,175,55,0.08), transparent 38%), #060606',
+                                        }}
+                                    />
+                                )}
                             </Box>
                         </motion.div>
                     </Grid>

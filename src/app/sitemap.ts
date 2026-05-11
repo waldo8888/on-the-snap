@@ -24,7 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
   } catch { /* fail gracefully */ }
 
-  let leagueRoutes: MetadataRoute.Sitemap = [];
+  const leagueRoutes: MetadataRoute.Sitemap = [];
   try {
     const leagues = await getLeagues({ published: true }) as LeagueWithDetails[];
     for (const league of leagues) {

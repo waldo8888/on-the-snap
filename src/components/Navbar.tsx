@@ -82,6 +82,7 @@ export default function Navbar() {
                         <motion.div whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
                             <Link
                                 href="/"
+                                prefetch={false}
                                 style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', textDecoration: 'none' }}
                             >
                                 {/* Logo image */}
@@ -90,6 +91,8 @@ export default function Navbar() {
                                         src="/images/onthesnap_logo.png"
                                         alt="On The Snap"
                                         fill
+                                        sizes="42px"
+                                        fetchPriority="high"
                                         style={{ objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(212,175,55,0.55))' }}
                                         priority
                                     />
@@ -130,6 +133,7 @@ export default function Navbar() {
                                     key={link.label}
                                     component={Link}
                                     href={link.href}
+                                    prefetch={false}
                                     sx={{
                                         color: 'rgba(245,245,240,0.65)',
                                         textDecoration: 'none',

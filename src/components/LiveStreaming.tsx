@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import TvIcon from '@mui/icons-material/Tv';
+import Image from 'next/image';
 
 const VENUE_SHOTS = [
     { label: 'Feature Tables', image: '/images/venue_tables_1.jpg' },
@@ -116,12 +117,17 @@ export default function LiveStreaming() {
                                     sx={{
                                         position: 'absolute',
                                         inset: 0,
-                                        backgroundImage: 'url(/images/venue_crowd.jpg)',
-                                        backgroundSize: 'cover',
-                                        backgroundPosition: 'center',
                                         filter: 'brightness(0.28) blur(3px)',
                                     }}
-                                />
+                                >
+                                    <Image
+                                        src="/images/venue_crowd.jpg"
+                                        alt=""
+                                        fill
+                                        sizes="(max-width: 1200px) 100vw, 760px"
+                                        style={{ objectFit: 'cover' }}
+                                    />
+                                </Box>
                                 {/* Scanline overlay */}
                                 <Box sx={{
                                     position: 'absolute', inset: 0,
@@ -240,14 +246,19 @@ export default function LiveStreaming() {
                                         <Box
                                             sx={{
                                                 position: 'absolute', inset: 0,
-                                                backgroundImage: `url(${shot.image})`,
-                                                backgroundSize: 'cover',
-                                                backgroundPosition: 'center',
                                                 filter: 'brightness(0.55)',
                                                 transition: 'filter 0.4s ease, transform 0.5s ease',
                                                 '&:hover': { filter: 'brightness(0.75)', transform: 'scale(1.04)' },
                                             }}
-                                        />
+                                        >
+                                            <Image
+                                                src={shot.image}
+                                                alt=""
+                                                fill
+                                                sizes="(max-width: 1200px) 100vw, 360px"
+                                                style={{ objectFit: 'cover' }}
+                                            />
+                                        </Box>
                                         <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.55) 0%, transparent 60%)' }} />
                                         <Box sx={{ position: 'absolute', bottom: 10, left: 14, zIndex: 2 }}>
                                             <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em' }}>
@@ -264,4 +275,3 @@ export default function LiveStreaming() {
         </Box>
     );
 }
-

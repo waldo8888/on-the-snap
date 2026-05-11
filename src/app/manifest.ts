@@ -12,7 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#D4AF37',
     icons: [
       {
-        src: '/images/onthesnap_logo.png',
+        src: '/icon.png',
         sizes: '512x512',
         type: 'image/png',
       },
