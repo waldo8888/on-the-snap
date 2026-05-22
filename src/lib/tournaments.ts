@@ -21,7 +21,6 @@ import type {
   SeasonStatus,
   SeasonWithDetails,
   SeasonLeaderboardEntry,
-  ScorekeeperStation,
   ScorekeeperStationSummary,
 } from './tournament-engine/types';
 import type { AdminRole } from './admin-auth';
@@ -1067,29 +1066,28 @@ export async function getSeasonLeaderboard(seasonId: string) {
 export async function getScorekeeperStations(
   tournamentId: string
 ): Promise<ScorekeeperStationSummary[]> {
-  const { data, error } = await insforge.database
-    .from('scorekeeper_stations')
-    .select(
-      'id, tournament_id, table_number, label, active, last_used_at, created_by, created_at, updated_at'
-    )
-    .eq('tournament_id', tournamentId)
-    .order('table_number', { ascending: true });
+  const { data, error } = await insforge.database.rpc(
+    'scorekeeper_list_tournament_stations_public',
+    { p_tournament_id: tournamentId }
+  );
 
   if (error) throw error;
-  return (data as ScorekeeperStationSummary[]) || [];
+  return ((data as ScorekeeperStationSummary[]) || []).slice().sort(
+    (left, right) => Number(left.table_number) - Number(right.table_number)
+  );
 }
 
 export async function getScorekeeperStationById(
   stationId: string
-): Promise<ScorekeeperStation | null> {
-  const { data, error } = await insforge.database
-    .from('scorekeeper_stations')
-    .select('*')
-    .eq('id', stationId)
-    .maybeSingle();
+): Promise<ScorekeeperStationSummary | null> {
+  const { data, error } = await insforge.database.rpc(
+    'scorekeeper_get_station_summary',
+    { p_station_id: stationId }
+  );
 
   if (error) throw error;
-  return (data as ScorekeeperStation | null) ?? null;
+  const row = Array.isArray(data) ? data[0] : data;
+  return (row as ScorekeeperStationSummary | null) ?? null;
 }
 
 // ============================================================

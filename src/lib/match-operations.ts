@@ -1,4 +1,4 @@
-import type { MatchUpdate } from './tournament-engine/types';
+import type { Match, MatchUpdate } from './tournament-engine/types';
 import { insforge } from './insforge';
 import {
   applyMatchUpdates,
@@ -14,6 +14,65 @@ import {
   revertMatch,
 } from './tournament-engine/advancement';
 import { computeAutoAssignments } from './table-assignment';
+
+export interface ScorekeeperCredentials {
+  stationId: string;
+  pinHash: string;
+}
+
+async function scorekeeperUpdateMatchField(
+  matchId: string,
+  patch: {
+    status?: string;
+    started_at?: string;
+    player1_score?: number;
+    player2_score?: number;
+  },
+  creds: ScorekeeperCredentials
+): Promise<Match> {
+  const { data, error } = await insforge.database.rpc(
+    'scorekeeper_update_match_field',
+    {
+      p_station_id: creds.stationId,
+      p_pin_hash: creds.pinHash,
+      p_match_id: matchId,
+      p_status: patch.status ?? null,
+      p_started_at: patch.started_at ?? null,
+      p_player1_score: patch.player1_score ?? null,
+      p_player2_score: patch.player2_score ?? null,
+    }
+  );
+
+  if (error) throw error;
+  return (Array.isArray(data) ? data[0] : data) as Match;
+}
+
+async function scorekeeperApplyMatchUpdates(
+  updates: MatchUpdate[],
+  creds: ScorekeeperCredentials
+): Promise<void> {
+  const serializedUpdates = updates
+    .filter((update): update is MatchUpdate & { matchId: string } => Boolean(update.matchId))
+    .map((update) => {
+      const { matchId, ...patch } = update;
+      return { matchId, ...patch };
+    });
+
+  if (serializedUpdates.length === 0) {
+    return;
+  }
+
+  const { error } = await insforge.database.rpc(
+    'scorekeeper_apply_match_updates',
+    {
+      p_station_id: creds.stationId,
+      p_pin_hash: creds.pinHash,
+      p_updates: serializedUpdates,
+    }
+  );
+
+  if (error) throw error;
+}
 
 export function parseScoreInput(value?: string) {
   if (!value || value.trim() === '') {
@@ -55,7 +114,18 @@ export function getRaceToExamples(raceTo: number) {
   return `${raceTo}-0, ${raceTo}-${midScore}, ${raceTo}-${closeScore}`;
 }
 
-export async function startMatch(matchId: string) {
+export async function startMatch(matchId: string, creds?: ScorekeeperCredentials) {
+  if (creds) {
+    return scorekeeperUpdateMatchField(
+      matchId,
+      {
+        status: 'in_progress',
+        started_at: new Date().toISOString(),
+      },
+      creds
+    );
+  }
+
   return updateMatch(matchId, {
     status: 'in_progress',
     started_at: new Date().toISOString(),
@@ -65,16 +135,32 @@ export async function startMatch(matchId: string) {
 export async function updateLiveMatchScore(
   matchId: string,
   player1Score: number,
-  player2Score: number
+  player2Score: number,
+  creds?: ScorekeeperCredentials
 ) {
   const { startedAt } = await (async () => {
     const matches = await getMatchesForMatchId(matchId);
     return matches;
   })();
 
+  const startedAtIso = startedAt ?? new Date().toISOString();
+
+  if (creds) {
+    return scorekeeperUpdateMatchField(
+      matchId,
+      {
+        status: 'in_progress',
+        started_at: startedAtIso,
+        player1_score: player1Score,
+        player2_score: player2Score,
+      },
+      creds
+    );
+  }
+
   return updateMatch(matchId, {
     status: 'in_progress',
-    started_at: startedAt ?? new Date().toISOString(),
+    started_at: startedAtIso,
     player1_score: player1Score,
     player2_score: player2Score,
   });
@@ -85,6 +171,7 @@ export async function finalizeMatchResult(options: {
   tournamentId: string;
   player1Score: number;
   player2Score: number;
+  scorekeeperCredentials?: ScorekeeperCredentials;
 }) {
   const freshMatches = await getMatches(options.tournamentId);
   const freshMatch = freshMatches.find((match) => match.id === options.matchId);
@@ -110,17 +197,24 @@ export async function finalizeMatchResult(options: {
     freshMatches
   );
 
-  await applyMatchUpdates(updates);
+  if (options.scorekeeperCredentials) {
+    await scorekeeperApplyMatchUpdates(updates, options.scorekeeperCredentials);
+  } else {
+    await applyMatchUpdates(updates);
+  }
 
   // Auto-assign freed tables to next ready matches
-  await autoAssignTablesAfterFinalize(options.tournamentId);
+  await autoAssignTablesAfterFinalize(options.tournamentId, options.scorekeeperCredentials);
 }
 
 /**
  * After a match is finalized, check if the tournament has auto_assign_tables enabled
  * and assign any freed tables to the next ready matches in the queue.
  */
-async function autoAssignTablesAfterFinalize(tournamentId: string) {
+async function autoAssignTablesAfterFinalize(
+  tournamentId: string,
+  creds?: ScorekeeperCredentials
+) {
   try {
     const tournament = await getTournamentById(tournamentId);
     if (!tournament?.auto_assign_tables) return;
@@ -133,7 +227,11 @@ async function autoAssignTablesAfterFinalize(tournamentId: string) {
 
     const assignments = computeAutoAssignments(matches, rounds, stations);
     if (assignments.length > 0) {
-      await applyMatchUpdates(assignments);
+      if (creds) {
+        await scorekeeperApplyMatchUpdates(assignments, creds);
+      } else {
+        await applyMatchUpdates(assignments);
+      }
     }
   } catch {
     // Auto-assignment is best-effort - don't fail the finalization
