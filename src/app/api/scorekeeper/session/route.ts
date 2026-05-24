@@ -4,11 +4,18 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import {
   createScorekeeperSessionValue,
   getScorekeeperSessionCookieOptions,
+  hashScorekeeperPin,
   isScorekeeperConfigError,
   SCOREKEEPER_SESSION_COOKIE,
-  verifyScorekeeperPin,
 } from '@/lib/scorekeeper-auth';
-import type { ScorekeeperStation } from '@/lib/tournament-engine/types';
+
+interface ValidatedStation {
+  id: string;
+  tournament_id: string;
+  table_number: number;
+  label: string | null;
+  active: boolean;
+}
 
 export async function POST(request: NextRequest) {
   const rateLimited = checkRateLimit(request, {
@@ -29,58 +36,38 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { data, error } = await insforge.database
-    .from('scorekeeper_stations')
-    .select('*')
-    .eq('id', body.stationId)
-    .maybeSingle();
-
-  if (error) {
-    console.error('[scorekeeper-session] lookup failed:', error.message);
-    return NextResponse.json({ error: 'Unable to verify station' }, { status: 400 });
-  }
-
-  const station = (data as ScorekeeperStation | null) ?? null;
-  if (!station) {
-    return NextResponse.json({ error: 'Station not found' }, { status: 404 });
-  }
-
-  if (!station.active) {
-    return NextResponse.json({ error: 'This station is inactive' }, { status: 403 });
-  }
-
-  let pinValid = false;
-  let sessionValue = '';
-
+  let pinHash = '';
   try {
-    pinValid = verifyScorekeeperPin(station.id, body.pin, station.pin_hash);
-    if (pinValid) {
-      sessionValue = createScorekeeperSessionValue({
-        stationId: station.id,
-        tournamentId: station.tournament_id,
-        tableNumber: station.table_number,
-      });
-    }
+    pinHash = hashScorekeeperPin(body.stationId, body.pin);
   } catch (error) {
     if (isScorekeeperConfigError(error)) {
       console.error('[scorekeeper-session] config error:', error.message);
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
-
     throw error;
   }
 
-  if (!pinValid) {
+  const { data, error } = await insforge.database.rpc('scorekeeper_validate_station', {
+    p_station_id: body.stationId,
+    p_pin_hash: pinHash,
+  });
+
+  if (error) {
+    console.error('[scorekeeper-session] validate failed:', error.message);
+    return NextResponse.json({ error: 'Unable to verify station' }, { status: 400 });
+  }
+
+  const station = (Array.isArray(data) ? data[0] : data) as ValidatedStation | null;
+  if (!station) {
     return NextResponse.json({ error: 'Incorrect PIN' }, { status: 403 });
   }
 
-  await insforge.database
-    .from('scorekeeper_stations')
-    .update({
-      last_used_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', station.id);
+  const sessionValue = createScorekeeperSessionValue({
+    stationId: station.id,
+    tournamentId: station.tournament_id,
+    tableNumber: station.table_number,
+    pinHash,
+  });
 
   const response = NextResponse.json({
     success: true,

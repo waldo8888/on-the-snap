@@ -8,6 +8,25 @@ export const revalidate = 60;
 export const metadata = {
   title: 'Tournaments | On The Snap',
   description: 'Weekly competitive pool tournaments at On The Snap. View upcoming, live, and completed tournaments.',
+  alternates: {
+    canonical: 'https://onthesnap.ca/tournaments',
+  },
+  openGraph: {
+    title: 'Tournaments | On The Snap',
+    description: 'Weekly competitive pool tournaments at On The Snap. View upcoming, live, and completed tournaments.',
+    url: 'https://onthesnap.ca/tournaments',
+    siteName: 'On The Snap',
+    images: [
+      {
+        url: '/images/venue_tables_1.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'On The Snap — Premium pool tables in Hamilton, Ontario',
+      },
+    ],
+    locale: 'en_CA',
+    type: 'website',
+  },
 };
 
 export default async function TournamentsPage() {

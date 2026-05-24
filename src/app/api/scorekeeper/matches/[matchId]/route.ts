@@ -3,14 +3,16 @@ import { insforge } from '@/lib/insforge';
 import {
   parseScorekeeperSessionValue,
   SCOREKEEPER_SESSION_COOKIE,
+  type ScorekeeperSessionPayload,
 } from '@/lib/scorekeeper-auth';
 import {
   finalizeMatchResult,
   startMatch,
   updateLiveMatchScore,
   validateMatchScores,
+  type ScorekeeperCredentials,
 } from '@/lib/match-operations';
-import type { Match, ScorekeeperStation, Tournament } from '@/lib/tournament-engine/types';
+import type { Match, Tournament } from '@/lib/tournament-engine/types';
 
 async function getAuthorizedMatchContext(
   request: NextRequest,
@@ -24,38 +26,23 @@ async function getAuthorizedMatchContext(
     return { error: 'Scorekeeper session required', status: 401 as const };
   }
 
-  const [{ data: stationData, error: stationError }, { data: matchData, error: matchError }] =
-    await Promise.all([
-      insforge.database
-        .from('scorekeeper_stations')
-        .select('*')
-        .eq('id', session.stationId)
-        .maybeSingle(),
-      insforge.database.from('matches').select('*').eq('id', matchId).maybeSingle(),
-    ]);
-
-  if (stationError) {
-    console.error('[scorekeeper-matches] station lookup failed:', stationError.message);
-    return { error: 'Unable to verify station', status: 400 as const };
-  }
+  const { data: matchData, error: matchError } = await insforge.database
+    .from('matches')
+    .select('*')
+    .eq('id', matchId)
+    .maybeSingle();
 
   if (matchError) {
     console.error('[scorekeeper-matches] match lookup failed:', matchError.message);
     return { error: 'Unable to load match', status: 400 as const };
   }
 
-  const station = (stationData as ScorekeeperStation | null) ?? null;
   const match = (matchData as Match | null) ?? null;
-
-  if (!station || !station.active) {
-    return { error: 'Station is inactive', status: 403 as const };
-  }
-
   if (!match) {
     return { error: 'Match not found', status: 404 as const };
   }
 
-  if (session.stationId !== station.id || match.tournament_id !== session.tournamentId) {
+  if (match.tournament_id !== session.tournamentId) {
     return { error: 'This match is not assigned to your station', status: 403 as const };
   }
 
@@ -85,10 +72,13 @@ async function getAuthorizedMatchContext(
 
   return {
     session,
-    station,
     match,
     tournament,
   };
+}
+
+function credentialsFromSession(session: ScorekeeperSessionPayload): ScorekeeperCredentials {
+  return { stationId: session.stationId, pinHash: session.pinHash };
 }
 
 export async function PATCH(
@@ -101,6 +91,8 @@ export async function PATCH(
   if ('error' in context) {
     return NextResponse.json({ error: context.error }, { status: context.status });
   }
+
+  const creds = credentialsFromSession(context.session);
 
   const body = (await request.json()) as
     | { action?: 'start' }
@@ -116,7 +108,7 @@ export async function PATCH(
         );
       }
 
-      await startMatch(matchId);
+      await startMatch(matchId, creds);
       return NextResponse.json({ success: true });
     }
 
@@ -140,7 +132,7 @@ export async function PATCH(
         return NextResponse.json({ error: 'Scores must be non-negative numbers' }, { status: 400 });
       }
 
-      await updateLiveMatchScore(matchId, player1Score, player2Score);
+      await updateLiveMatchScore(matchId, player1Score, player2Score, creds);
       return NextResponse.json({ success: true });
     }
 
@@ -169,6 +161,7 @@ export async function PATCH(
         tournamentId: context.match.tournament_id,
         player1Score,
         player2Score,
+        scorekeeperCredentials: creds,
       });
 
       return NextResponse.json({ success: true });

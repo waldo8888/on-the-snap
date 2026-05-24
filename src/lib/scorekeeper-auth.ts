@@ -11,6 +11,7 @@ export interface ScorekeeperSessionPayload {
   stationId: string;
   tournamentId: string;
   tableNumber: number;
+  pinHash: string;
   exp: number;
 }
 
@@ -123,6 +124,7 @@ export function parseScorekeeperSessionValue(
       typeof parsed.stationId !== 'string' ||
       typeof parsed.tournamentId !== 'string' ||
       typeof parsed.tableNumber !== 'number' ||
+      typeof parsed.pinHash !== 'string' ||
       typeof parsed.exp !== 'number'
     ) {
       return null;

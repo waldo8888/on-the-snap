@@ -5,7 +5,14 @@ import {
   parseScorekeeperSessionValue,
   SCOREKEEPER_SESSION_COOKIE,
 } from '@/lib/scorekeeper-auth';
-import type { ScorekeeperStation } from '@/lib/tournament-engine/types';
+
+interface StationSummary {
+  id: string;
+  tournament_id: string;
+  table_number: number;
+  label: string | null;
+  active: boolean;
+}
 
 export async function GET(
   request: NextRequest,
@@ -20,17 +27,16 @@ export async function GET(
     return NextResponse.json({ error: 'Scorekeeper session required' }, { status: 401 });
   }
 
-  const { data, error } = await insforge.database
-    .from('scorekeeper_stations')
-    .select('*')
-    .eq('id', stationId)
-    .maybeSingle();
+  const { data, error } = await insforge.database.rpc(
+    'scorekeeper_get_station_summary',
+    { p_station_id: stationId }
+  );
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  const station = (data as ScorekeeperStation | null) ?? null;
+  const station = (Array.isArray(data) ? data[0] : data) as StationSummary | null;
   if (!station || !station.active) {
     return NextResponse.json({ error: 'Station is inactive' }, { status: 403 });
   }
