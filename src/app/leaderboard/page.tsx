@@ -10,6 +10,25 @@ export const revalidate = 60;
 export const metadata = {
   title: 'Player Leaderboard | On The Snap',
   description: 'Career rankings, points, titles, and win rates for On The Snap tournament players.',
+  alternates: {
+    canonical: 'https://onthesnap.ca/leaderboard',
+  },
+  openGraph: {
+    title: 'Player Leaderboard | On The Snap',
+    description: 'Career rankings, points, titles, and win rates for On The Snap tournament players.',
+    url: 'https://onthesnap.ca/leaderboard',
+    siteName: 'On The Snap',
+    images: [
+      {
+        url: '/images/venue_tables_1.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'On The Snap — Premium pool tables in Hamilton, Ontario',
+      },
+    ],
+    locale: 'en_CA',
+    type: 'website',
+  },
 };
 
 const validGameTypes: Array<GameType | 'all'> = [

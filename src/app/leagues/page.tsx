@@ -10,6 +10,26 @@ export const metadata = {
   title: 'Leagues | On The Snap',
   description:
     'Browse published On The Snap leagues, active seasons, recent linked tournaments, and standings previews.',
+  alternates: {
+    canonical: 'https://onthesnap.ca/leagues',
+  },
+  openGraph: {
+    title: 'Leagues | On The Snap',
+    description:
+      'Browse published On The Snap leagues, active seasons, recent linked tournaments, and standings previews.',
+    url: 'https://onthesnap.ca/leagues',
+    siteName: 'On The Snap',
+    images: [
+      {
+        url: '/images/venue_tables_1.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'On The Snap — Premium pool tables in Hamilton, Ontario',
+      },
+    ],
+    locale: 'en_CA',
+    type: 'website',
+  },
 };
 
 export default async function LeaguesPage() {
