@@ -9,6 +9,7 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import Image from 'next/image';
+import StrikeableBall from './StrikeableBall';
 
 // Decorative row of 15 pool balls
 const BALL_COLORS = [
@@ -90,7 +91,9 @@ export default function Footer() {
                                 transition={{ duration: 0.4, delay: i * 0.04 }}
                                 whileHover={{ y: -4, scale: 1.2 }}
                             >
-                                <FooterBall color={color} n={i + 1} />
+                                <StrikeableBall distance={70}>
+                                    <FooterBall color={color} n={i + 1} />
+                                </StrikeableBall>
                             </motion.div>
                         ))}
                     </Box>

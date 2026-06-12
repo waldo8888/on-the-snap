@@ -3,6 +3,7 @@
 import { Box, Container, Typography, Grid } from '@mui/material';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import StrikeableBall from './StrikeableBall';
 
 // SVG pool ball icon with authentic shine & number
 function PoolBall({ number, color, size = 72 }: { number: number; color: string; size?: number }) {
@@ -264,7 +265,9 @@ export default function Amenities() {
                                                     whileHover={{ rotate: [0, -8, 8, 0], scale: 1.12 }}
                                                     transition={{ duration: 0.5 }}
                                                 >
-                                                    <PoolBall number={item.ballNum} color={item.ballColor} size={64} />
+                                                    <StrikeableBall distance={60}>
+                                                        <PoolBall number={item.ballNum} color={item.ballColor} size={64} />
+                                                    </StrikeableBall>
                                                 </motion.div>
                                             </Box>
 

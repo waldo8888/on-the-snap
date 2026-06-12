@@ -12,6 +12,7 @@ import type {
     TournamentWithDetails,
 } from '@/lib/tournament-engine/types';
 import TournamentList from './TournamentList';
+import StrikeableBall from './StrikeableBall';
 
 // Triangle rack visual using staggered ball grid
 const RACK_BALLS = [
@@ -284,7 +285,9 @@ export default function Leagues({ tournaments = [], leagues = [], topPlayers = [
                                                             whileHover={{ scale: 1.2, zIndex: 10 }}
                                                             style={{ position: 'relative', zIndex: 1 }}
                                                         >
-                                                            <RackBall color={ball.color} n={ball.n} size={34} />
+                                                            <StrikeableBall distance={80}>
+                                                                <RackBall color={ball.color} n={ball.n} size={34} />
+                                                            </StrikeableBall>
                                                         </motion.div>
                                                     );
                                                 })}

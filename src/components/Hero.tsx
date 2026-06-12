@@ -4,6 +4,7 @@ import { Box, Container, Typography, Button } from '@mui/material';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Image from 'next/image';
 import { useRef } from 'react';
+import StrikeableBall from './StrikeableBall';
 
 // Floating billiard ball decoration
 function FloatingBall({
@@ -26,22 +27,29 @@ function FloatingBall({
     const id = `hero-ball-${number}`;
     return (
         <motion.div
-            style={{ position: 'absolute', left: x, top: y, zIndex: 1 }}
+            style={{ position: 'absolute', left: x, top: y, zIndex: 3 }}
             initial={{ opacity: 0, scale: 0 }}
             animate={{
                 opacity: [0, 0.28, 0.28],
                 scale: [0, 1, 1],
                 y: [0, -18, 0, 12, 0],
-                rotate: [0, 120, 240, 360],
             }}
+            whileHover={{ opacity: 0.55 }}
             transition={{
                 opacity: { delay, duration: 1 },
                 scale: { delay, duration: 0.8, ease: 'backOut' },
                 y: { delay: delay + 1, duration, repeat: Infinity, ease: 'easeInOut' },
-                rotate: { delay: delay + 1, duration: duration * 1.4, repeat: Infinity, ease: 'linear' },
             }}
         >
-            <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+            <StrikeableBall distance={170}>
+                <motion.svg
+                    width={size}
+                    height={size}
+                    viewBox="0 0 64 64"
+                    xmlns="http://www.w3.org/2000/svg"
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ delay: delay + 1, duration: duration * 1.4, repeat: Infinity, ease: 'linear' }}
+                >
                 <defs>
                     <radialGradient id={id} cx="35%" cy="30%" r="58%">
                         <stop offset="0%" stopColor="rgba(255,255,255,0.5)" />
@@ -60,10 +68,11 @@ function FloatingBall({
                     fill="#111"
                     fontFamily="Arial, sans-serif"
                     dominantBaseline="middle"
-                >
-                    {number}
-                </text>
-            </svg>
+                    >
+                        {number}
+                    </text>
+                </motion.svg>
+            </StrikeableBall>
         </motion.div>
     );
 }
