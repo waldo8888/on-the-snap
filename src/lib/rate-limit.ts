@@ -24,9 +24,14 @@ function cleanup() {
 }
 
 function getClientIp(request: NextRequest): string {
+  // Prefer headers the hosting platform sets itself. The leftmost
+  // x-forwarded-for entry is client-supplied and can be spoofed to dodge limits,
+  // so fall back to the rightmost (the one our proxy appended).
+  const forwarded = request.headers.get('x-forwarded-for')?.split(',');
   return (
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() ||
     request.headers.get('x-real-ip') ||
+    forwarded?.[forwarded.length - 1]?.trim() ||
     'unknown'
   );
 }
@@ -38,6 +43,8 @@ interface RateLimitOptions {
   windowMs: number;
   /** Prefix to namespace different limiters */
   prefix: string;
+  /** Count against this key instead of the client IP (e.g. a station id) */
+  key?: string;
 }
 
 /**
@@ -49,8 +56,7 @@ export function checkRateLimit(
 ): NextResponse | null {
   cleanup();
 
-  const ip = getClientIp(request);
-  const key = `${options.prefix}:${ip}`;
+  const key = `${options.prefix}:${options.key ?? getClientIp(request)}`;
   const now = Date.now();
 
   const entry = store.get(key);

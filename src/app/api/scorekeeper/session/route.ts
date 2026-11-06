@@ -36,6 +36,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Per-station cap so rotating client IPs cannot brute-force a 6-digit PIN.
+  const stationLimited = checkRateLimit(request, {
+    prefix: 'scorekeeper-station',
+    key: String(body.stationId),
+    maxRequests: 10,
+    windowMs: 15 * 60 * 1000,
+  });
+  if (stationLimited) return stationLimited;
+
   let pinHash = '';
   try {
     pinHash = hashScorekeeperPin(body.stationId, body.pin);
