@@ -29,6 +29,7 @@ function formatUpdatedAt(value?: string | null) {
   }
 
   return new Date(value).toLocaleTimeString('en-US', {
+    timeZone: 'America/Toronto',
     hour: 'numeric',
     minute: '2-digit',
   });
@@ -548,7 +549,7 @@ export default function ScorekeeperClient({
                   </Typography>
                   {match.scheduled_at && (
                     <Typography sx={{ color: '#D4AF37', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
-                      {new Date(match.scheduled_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                      {new Date(match.scheduled_at).toLocaleTimeString('en-US', { timeZone: 'America/Toronto', hour: 'numeric', minute: '2-digit', hour12: true })}
                     </Typography>
                   )}
                 </Box>

@@ -310,6 +310,7 @@ function calculatePlayerLeaderboardEntries(
 
 function formatRegistrationTimestamp(dateStr: string) {
   return new Date(dateStr).toLocaleString('en-US', {
+    timeZone: 'America/Toronto',
     month: 'short',
     day: 'numeric',
     hour: 'numeric',

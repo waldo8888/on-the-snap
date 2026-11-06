@@ -216,6 +216,7 @@ export function formatScheduledTime(date: Date | string | null): string | null {
   if (!date) return null;
   const d = typeof date === 'string' ? new Date(date) : date;
   return d.toLocaleTimeString('en-US', {
+    timeZone: 'America/Toronto',
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,

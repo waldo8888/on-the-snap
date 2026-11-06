@@ -414,7 +414,7 @@ const BracketViewer = forwardRef<SVGSVGElement, BracketViewerProps>(function Bra
                     fontFamily="var(--font-inter), sans-serif"
                     opacity={0.7}
                   >
-                    {new Date(match.scheduled_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                    {new Date(match.scheduled_at).toLocaleTimeString('en-US', { timeZone: 'America/Toronto', hour: 'numeric', minute: '2-digit', hour12: true })}
                   </text>
                 )}
 
