@@ -112,7 +112,7 @@ export default function OnDeckPage() {
         const diffSec = Math.floor((currentTime.getTime() - lastUpdated.getTime()) / 1000);
         if (diffSec < 10) return 'Updated just now';
         if (diffSec < 60) return `Updated ${diffSec}s ago`;
-        return `Updated ${lastUpdated.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+        return `Updated ${lastUpdated.toLocaleTimeString('en-US', { timeZone: 'America/Toronto', hour: 'numeric', minute: '2-digit', hour12: true })}`;
       })()
     : 'Connecting...';
 
@@ -146,7 +146,7 @@ export default function OnDeckPage() {
         </Box>
         <Box sx={{ textAlign: 'right' }}>
           <Typography sx={{ color: '#f5f5f0', fontSize: '2rem', fontWeight: 600 }}>
-            {currentTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+            {currentTime.toLocaleTimeString('en-US', { timeZone: 'America/Toronto', hour: 'numeric', minute: '2-digit', hour12: true })}
           </Typography>
           <Chip
             label={totalNonBye > 0 ? `${completedCount}/${totalNonBye} matches` : 'No matches'}

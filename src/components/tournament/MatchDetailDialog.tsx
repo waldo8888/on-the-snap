@@ -51,6 +51,7 @@ function getParticipant(id: string | null, participants: Participant[]): Partici
 function formatTimestamp(iso: string | null): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleString('en-US', {
+    timeZone: 'America/Toronto',
     month: 'short',
     day: 'numeric',
     hour: 'numeric',

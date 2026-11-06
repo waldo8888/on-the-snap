@@ -47,6 +47,7 @@ function formatTournamentFormat(value: string) {
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString('en-US', {
+    timeZone: 'America/Toronto',
     month: 'short',
     day: 'numeric',
     year: 'numeric',

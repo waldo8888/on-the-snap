@@ -181,6 +181,7 @@ export default async function LeagueDetailPage({
                       </Link>
                       <Typography sx={{ color: '#8f8f8f', fontSize: '0.85rem', mt: 0.4 }}>
                         {new Date(tournament.tournament_start_at).toLocaleDateString('en-CA', {
+                          timeZone: 'America/Toronto',
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric',
@@ -256,6 +257,7 @@ export default async function LeagueDetailPage({
                       <Typography sx={{ color: '#8f8f8f', fontSize: '0.85rem', mt: 0.35 }}>
                         {season.status} ·{' '}
                         {new Date(season.start_at).toLocaleDateString('en-CA', {
+                          timeZone: 'America/Toronto',
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric',

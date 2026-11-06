@@ -188,6 +188,7 @@ export default async function SeasonDetailPage({
                   </Link>
                   <Typography sx={{ color: '#8f8f8f', fontSize: '0.85rem', mt: 0.35 }}>
                     {new Date(tournament.tournament_start_at).toLocaleDateString('en-CA', {
+                      timeZone: 'America/Toronto',
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric',

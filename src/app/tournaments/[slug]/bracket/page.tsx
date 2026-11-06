@@ -33,7 +33,7 @@ function getParticipant(playerId: string | null, participants: Participant[]) {
 
 function formatUpdatedAt(date: Date | null) {
   if (!date) return 'Waiting for first refresh';
-  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return date.toLocaleTimeString('en-US', { timeZone: 'America/Toronto', hour: 'numeric', minute: '2-digit' });
 }
 
 export default function FullscreenBracketPage() {
@@ -437,7 +437,7 @@ export default function FullscreenBracketPage() {
                   {ann.message}
                 </Typography>
                 <Typography sx={{ color: '#707070', fontSize: '0.65rem', flexShrink: 0 }}>
-                  {new Date(ann.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                  {new Date(ann.created_at).toLocaleTimeString('en-US', { timeZone: 'America/Toronto', hour: 'numeric', minute: '2-digit' })}
                 </Typography>
               </Paper>
             ))}

@@ -60,6 +60,7 @@ function formatTournamentFormat(fmt: string): string {
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
   return d.toLocaleDateString('en-US', {
+    timeZone: 'America/Toronto',
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -70,6 +71,7 @@ function formatDate(dateStr: string): string {
 function formatTime(dateStr: string): string {
   const d = new Date(dateStr);
   return d.toLocaleTimeString('en-US', {
+    timeZone: 'America/Toronto',
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,

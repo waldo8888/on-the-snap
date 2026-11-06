@@ -141,7 +141,7 @@ function OverviewPanel({ tournament }: Props) {
                     {ann.message}
                   </Typography>
                   <Typography sx={{ color: '#707070', fontSize: '0.65rem', mt: 0.25 }}>
-                    {new Date(ann.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    {new Date(ann.created_at).toLocaleString('en-US', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                   </Typography>
                 </Box>
               </Box>

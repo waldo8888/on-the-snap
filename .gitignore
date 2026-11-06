@@ -56,3 +56,6 @@ next-env.d.ts
 .roo
 .trae
 .windsurf
+
+# Playwright MCP scratch output
+.playwright-mcp

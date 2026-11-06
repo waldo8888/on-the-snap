@@ -40,6 +40,7 @@ function formatDate(value: string | null) {
   }
 
   return new Date(value).toLocaleDateString('en-CA', {
+    timeZone: 'America/Toronto',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
