@@ -4,7 +4,7 @@ import Navbar from '@/components/Navbar';
 import { getLeagues } from '@/lib/tournaments';
 import type { LeagueWithDetails } from '@/lib/tournament-engine/types';
 
-export const revalidate = 120;
+export const revalidate = 3600;
 
 export const metadata = {
   title: 'Leagues | On The Snap',

@@ -5,7 +5,7 @@ import LeaderboardClient from './LeaderboardClient';
 import { getPlayerLeaderboard } from '@/lib/tournaments';
 import type { GameType, TournamentFormat } from '@/lib/tournament-engine/types';
 
-export const revalidate = 60;
+export const revalidate = 900;
 
 export const metadata = {
   title: 'Player Leaderboard | On The Snap',

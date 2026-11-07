@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 300; // re-fetch every 5 minutes
+export const revalidate = 3600; // re-fetch every hour
 
 const TOURNAMENT_STATUS_PRIORITY: Record<TournamentStatus, number> = {
   live: 0,

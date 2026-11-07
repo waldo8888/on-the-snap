@@ -13,7 +13,7 @@ import {
 import Navbar from '@/components/Navbar';
 import { getPlayerLeaderboard, getPlayerProfileData } from '@/lib/tournaments';
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 function formatTournamentFormat(value: string) {
   return value

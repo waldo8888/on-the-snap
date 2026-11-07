@@ -3,7 +3,7 @@ import Navbar from '@/components/Navbar';
 import { getTournaments } from '@/lib/tournaments';
 import TournamentListing from './TournamentListing';
 
-export const revalidate = 60;
+export const revalidate = 900;
 
 export const metadata = {
   title: 'Tournaments | On The Snap',

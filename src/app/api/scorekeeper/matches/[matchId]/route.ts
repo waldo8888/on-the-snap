@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { insforge } from '@/lib/insforge';
 import {
   parseScorekeeperSessionValue,
@@ -163,6 +164,13 @@ export async function PATCH(
         player2Score,
         scorekeeperCredentials: creds,
       });
+
+      // Public pages are cached for longer now, so refresh the ones a final
+      // result changes instead of waiting for the timer.
+      revalidatePath('/tournaments/[slug]', 'page');
+      revalidatePath('/tournaments');
+      revalidatePath('/leaderboard');
+      revalidatePath('/players/[id]', 'page');
 
       return NextResponse.json({ success: true });
     }
