@@ -6,7 +6,7 @@ import Navbar from '@/components/Navbar';
 import { getLeagueBySlug, getLeagues } from '@/lib/tournaments';
 import { BreadcrumbJsonLd } from '@/lib/json-ld';
 
-export const revalidate = 120;
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   try {

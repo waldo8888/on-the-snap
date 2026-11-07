@@ -13,7 +13,7 @@ import TournamentDetailTabs from './TournamentDetailTabs';
 import TournamentRegistrationCard from './TournamentRegistrationCard';
 import ShareButton from '@/components/tournament/ShareButton';
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 export async function generateStaticParams() {
   try {

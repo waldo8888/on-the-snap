@@ -31,7 +31,7 @@ export default function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  // Only the staff admin area needs the auth gate. Running middleware on every
+  // public page, asset and bot hit cost server CPU for nothing.
+  matcher: ['/admin/:path*'],
 };
